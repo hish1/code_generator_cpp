@@ -1,16 +1,33 @@
 PROGRAM V1;
-begin
-  i := "a";
-  i := 1 < 2;
-  i := 1 - 2 - 3 + 4;
-  
-  if (i < 2) then begin
-    i := 1;
-    i := 1;
-  end;
 
-  while(i<4) do begin
-    i := i+1;
-    i := i+1;
+CONST
+  N = 10;
+
+TYPE
+  customArray = array [1..N] of integer;
+
+VAR
+  i : integer;
+  arr : customArray;
+
+PROCEDURE sortArray(arr : customArray; N : integer);
+VAR
+  i, j : integer;
+  temp : integer;
+begin
+  for i := 1 to N do begin
+    for j := 1 to N do begin
+      if arr[i] < arr[j] then begin
+        temp := arr[i];
+        arr[i] := arr[j];
+        arr[j] := arr[i];
+      end;
+    end;
   end;
+end;
+
+begin
+   for i := 1 to N do begin
+    arr[i] := i * i;
+   end;
 end.
