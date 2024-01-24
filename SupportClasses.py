@@ -124,12 +124,34 @@ class NodeIfStatement(Node):
                  else_statement_part = NodeStatementPart()):
         self._condition = condition
         self.then_statement_part = then_statement_part
-        self.else_statement_part = else_statement_part       
+        self.else_statement_part = else_statement_part 
+      
+class NodeSwitchStatement(Node):
+    def __init__(self, 
+                 variable = None, 
+                 case_blocks = list()):
+        self.variable = variable
+        self.case_blocks = case_blocks
 
-class NodeWhileStatement(Node):
+class NodeCaseBlock(Node):
+    def __init__(self, 
+                 case_list = list(), 
+                 statement_part = NodeStatementPart(list())):
+        self.case_list = case_list
+        self.statement_part = statement_part
+    
+    def append_case(self, case):
+        self.case_list.append( case)
+    def append_statement(self, statement):
+        self.statement_part.append(statement)
+
+class NodeCycleStatement(Node):
     def __init__(self, condition = None, statement_part = NodeStatementPart()):
         self.condition = condition
         self.statement_part = statement_part
+
+class NodeWhileStatement(NodeCycleStatement): pass
+class NodeRepeatUntilStatement(NodeCycleStatement): pass
 
 class NodeForStatement(Node):
     def __init__(self, 
@@ -143,3 +165,7 @@ class NodeForStatement(Node):
         self.end_expression = end_expression
         self.statement_part = statement_part
         self.is_increase = is_increase
+
+class NodeComment(Node):
+    def __init__(self, comment):
+        self.comment = comment

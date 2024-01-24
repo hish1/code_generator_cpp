@@ -22,6 +22,7 @@ regex_patterns = {
     'WHILE': r'while',
     'DO': r'do',
     'REPEAT': r'repeat',
+    'CASE': r'case',
     'UNTIL': r'until',
     'FOR': r'for',
     'TO': r'to',
@@ -51,6 +52,8 @@ regex_patterns = {
     'DOT': r'\.',
     'COMMA': r',',
     'COLON': r':',
+    'LCOM': r'{\*',
+    'RCOM': r'\*}'
 }
 
 # Combine all the regex patterns into one regular expression
@@ -96,7 +99,7 @@ class Lexer:
         return tokens
 
 def main():
-    with open('python_module/parser/test.pas', 'r') as file:
+    with open('comp/test.pas', 'r') as file:
         code = file.read()
 
     try:

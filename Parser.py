@@ -209,10 +209,14 @@ class Parser:
         node = None
         if self._check('IF'):
             node = self._parse_if_statement()
+        if self._check('CASE'):
+            node = self._parse_switch_statement()
         elif self._check('WHILE'):
             node = self._parse_while_statement()
         elif self._check('FOR'):
             node = self._parse_for_statement()
+        elif self._check('REPEAT'):
+            node = self._parse_repeat_until_statement()
         elif self._check('IDENTIFIER'):
             node = self._parse_identifier_statement()
             if self.current_token[0] not in ('END', 'ELSE'):
@@ -287,6 +291,25 @@ class Parser:
                 else_statement_part.append(self._parse_statement())
         return NodeIfStatement(condition, then_statement_part, else_statement_part)
 
+    def _parse_switch_statement(self):
+        self._expect_and_move('CASE')
+        variable = self._parse_identifier_statement()
+        self._expect_and_move('OF')
+        case_blocks = list()
+        while not self._check('END'):
+            case_block = NodeCaseBlock(list(), NodeStatementPart(list()))
+            while not self._check('COLON'):
+                case_block.append_case(self._pop_identifier())
+                if self._check('COMMA'): self._next_token()
+            self._expect_and_move('COLON')
+            if self._check('BEGIN'):
+                case_block.statement_part = self._parse_statement_block()
+            else: 
+                case_block.append_statement(self._parse_statement())
+            case_blocks.append(case_block)
+        self._expect_and_move('END')
+        return NodeSwitchStatement(variable, case_blocks)
+
     def _parse_for_statement(self):
         self._expect_and_move('FOR')
         self._expect('IDENTIFIER')
@@ -317,6 +340,28 @@ class Parser:
         else:
             statement_part.append(self._parse_statement())
         return NodeWhileStatement(condition, statement_part)
+
+    def _parse_repeat_until_statement(self):
+        self._expect_and_move('REPEAT')
+        statement_part = NodeStatementPart(list())
+        while not self._check('UNTIL'):
+            statement_part.append(self._parse_statement())
+        self._expect_and_move('UNTIL')
+        condition = self._parse_condition()
+        self._expect_and_move('SEMICOLON')
+        return NodeRepeatUntilStatement(condition, statement_part)
+
+    def _parse_comment(self):
+        self._expect_and_move('LCOM')
+        comment = ''
+        counter = 0
+        while not self._check('RCOM'):
+            comment += self._pop_identifier()
+            counter += 1
+            if counter % 10 == 0:
+                comment += '\n'
+        return NodeComment(comment)
+
 
     def _parse_condition(self):
         left = self._parse_expression()
@@ -359,16 +404,20 @@ class Parser:
         # Блок разбора переменных, строк и чисел
         elif self._check('QUOTES'):
             self._next_token()
-            string = ''
-            while not self._check('QUOTES'):
-                string += self._pop_identifier()
-            self._expect_and_move('QUOTES')
-            return string
         elif self._check_all(('NUMBER', 'TRUE', 'FALSE')):
             return NodeValue(self._pop_identifier())
         elif self._check('IDENTIFIER'):
             return self._parse_identifier_statement()
         else: self._expect_and_move('IDENTIFIER')
+
+    def _parse_string(self):
+        self._expect_and_move('QUOTES')
+        string = ''
+        while not self._check('QUOTES'):
+            string += self._pop_identifier()
+            self._expect_and_move('QUOTES')
+        return NodeValue(string)
+
             
 if __name__ == '__main__':
     reader = open('comp/test.pas', 'r')
