@@ -1,33 +1,26 @@
 PROGRAM V1;
 
-CONST
-  N = 10;
-
 TYPE
-  customArray = array [1..N] of integer;
+  myArray = array [0..50] of integer;
 
 VAR
-  i : integer;
-  arr : customArray;
+  arr : myArray;
+  index, temp : integer;
 
-PROCEDURE sortArray(arr : customArray; N : integer);
+FUNCTION factorial(n : integer) : integer;
 VAR
-  i, j : integer;
-  temp : integer;
+  res : integer;
+  counter : integer;
 begin
-  for i := 1 to N do begin
-    for j := 1 to N do begin
-      if arr[i] < arr[j] then begin
-        temp := arr[i];
-        arr[i] := arr[j];
-        arr[j] := arr[i];
-      end;
-    end;
-  end;
+  counter := 1;
+  for counter := 1 to n do 
+    res := res * counter;
+  factorial := res;
 end;
 
 begin
-   for i := 1 to N do begin
-    arr[i] := i * i;
-   end;
+  for index := 0 to 50 do begin
+    temp := factorial(index);
+    arr[index] := temp;
+  end;
 end.

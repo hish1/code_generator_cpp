@@ -1,6 +1,7 @@
 from lexer import Lexer
 from lexer import regex_patterns as Token
 from SupportClasses import *
+from SemanticModule import SemanticModule
 
 class Parser:
 
@@ -9,415 +10,390 @@ class Parser:
         self.current_token = lexer.next_token()
         self._scope_type_dict = dict() 
         self.current_scope = list()
+        self.__semantic_module = SemanticModule()
 
-    def _next_token(self):
+    def __next_token(self):
         self.current_token = self.lexer.next_token()
     
-    def _expect(self, _expected):
+    def __expect(self, _expected):
         if self.current_token[0] != _expected:
-            self._raise_exception(f'Unexpected token: {self.current_token}')
+            self.__raise_exception(f'Unexpected token: {self.current_token}')
         return True
 
-    def _expect_and_move(self, _expected):
-        self._expect(_expected)
-        self._next_token()
+    def __expect_and_move(self, _expected):
+        self.__expect(_expected)
+        self.__next_token()
         return True
     
-    def _check(self, _expected):
+    def __check(self, _expected):
         return self.current_token[0] == _expected
     
-    def _check_all(self, _expected_list):
+    def __check_all(self, _expected_list):
         return self.current_token[0] in _expected_list
 
-    def _pop_token(self):
+    def __pop_token(self):
         token = self.current_token[0]
-        self._next_token()
+        self.__next_token()
         return token
 
-    def _pop_identifier(self):
+    def __pop_value(self):
         identifier = self.current_token[1]
-        self._next_token()
+        self.__next_token()
         return identifier
 
-    def _raise_exception(self, message):
+    def __get_current_scope_str(self):
+        return '.'.join(self.current_scope)
+
+    def __raise_exception(self, message):
         raise AttributeError(f'Parse error: {message}')
     
     def parse(self):
-        main_node = MainNode()
-        match self.current_token[0]:
-            case 'EOF':
-                return main_node
-            case 'MODULE':
-                self._next_token()
-                raise NotImplementedError('Нет имплементации для модуля')
-            case _:
-                main_node = self._parse_prog()
-                return main_node
+        if not self.__check('EOF'):
+            main_node = self._parse_prog()
+        else:
+            main_node = MainNode()
+        return main_node
     
     def _parse_prog(self):
         node = NodeProgram()
-        if self._check('PROGRAM'):
-            self._next_token()
-            node.identifier = self._pop_identifier()
-            self.current_scope.append(node.identifier)
-            self._expect_and_move('SEMICOLON')
+        if self.__check('PROGRAM'):
+            self.__next_token()
+            node.identifier = self.__pop_value()
+            self.__expect_and_move('SEMICOLON')
         node.global_declaration = self._parse_declaration_part()
-        node.statement_part = self._parse_statement_block()
-        self._expect_and_move('DOT')
+        self.current_scope.append(node.identifier)
+        node.statement_part = self.__parse_STATEMENT_BLOCK()
+        self.__expect_and_move('DOT')
         return node
 
     def _parse_declaration_part(self):
         declaration_list = list()
-        while not self._check('BEGIN'):
+        while not self.__check('BEGIN'):
             match self.current_token[0]:
                 case 'VAR':
-                    declaration_list.extend(self._parse_variable_part())
+                    self.__next_token()
+                    while self.__check('IDENTIFIER'):
+                        declaration_list.extend(self.__parse_VAR_statement())
+                        self.__expect_and_move('SEMICOLON')
                 case 'TYPE':
-                    declaration_list.extend(self._parse_type_part())
+                    self.__next_token()
+                    while self.__check('IDENTIFIER'):
+                        declaration_list.append(self.__parse_TYPE_statement())
+                        self.__expect_and_move('SEMICOLON')
                 case 'CONST':
-                    self._next_token()
-                    declaration_list.extend(self._parse_const_part())
+                    self.__next_token()
+                    while self.__check('IDENTIFIER'):
+                        declaration_list.append(self.__parse_CONST_statement())
+                        self.__expect_and_move('SEMICOLON')
                 case 'PROCEDURE' | 'FUNCTION':
-                    declaration_list.append(self._parse_subroutine())
+                    declaration_list.append(self.__parse_SUBROUTINE())
                 case _:
-                    self._raise_exception('Impossible to parse declaration part. Infinity loop')
+                    self.__raise_exception('Impossible to parse declaration part. Infinity loop')
         return NodeDeclarationPart(declaration_list)
-    
-    def _parse_variable_part(self):
-        variables = list()
-        self._expect_and_move('VAR')
-        while self._check('IDENTIFIER'):
-            temp = list()
-            while not self._check('COLON'):
-                self._expect('IDENTIFIER')
-                temp.append(self._pop_identifier())
-                if self._check('COMMA'):
-                    self._next_token()
-            self._next_token() # Скип COLON
-            _type = self._parse_type()
-            self._expect_and_move('SEMICOLON')
-            for variable in temp:
-                node = NodeVariableDeclaration(variable, _type)
-                variables.append(node)
-        if len(variables) == 0 : self._raise_exception('VAR block is empty but declared')
+
+    # Parsing VAR declaration
+    def __parse_VAR_statement(self):
+        identifiers = []
+        while not self.__check('COLON'):
+            identifiers.append(self.__pop_value())
+            if self.__check('COMMA'):
+                self.__next_token()
+        self.__next_token()
+        _type = self.__parse_type()
+        if self.__check('ASSIGN'):
+            raise Error('Not implement Variable assign')
+        for identifier in identifiers:
+            self.__semantic_module.add_variable(self.current_scope, identifier, _type)
+        if isinstance(_type, NodeType):
+            _type = _type.identifier
+        elif isinstance(_type, PrimitiveType):
+            _type = _type.value
+        variables = [NodeVariableDeclaration(identifier, _type) for identifier in identifiers]
+        # Add declaration to scope
         return variables
-
-    def _parse_const_part(self):
-        consts = list()
-        while self._check('IDENTIFIER'):
-            identifier = self._pop_identifier()
-            self._expect_and_move('EQUALITY')
-            expression = self._parse_expression()
-            self._expect_and_move('SEMICOLON')
-            consts.append(NodeConst(identifier, expression))
-        if len(consts) == 0 : self._raise_exception('CONST block is empty but declired')
-        return consts
     
-    def _parse_type_part(self):
-        types = list()
-        self._expect_and_move('TYPE')
-        current_scope = '.'.join(self.current_scope)
-        while self._check('IDENTIFIER'):
-            node = NodeType()
-            node.identifier = self._pop_identifier()
-            self._expect_and_move('EQUALITY')
-            node.type = self._parse_type()
-            self._expect_and_move('SEMICOLON')
-            types.append(node)
-            if current_scope not in self._scope_type_dict: # Создаём scope_dict, если его не было
-                self._scope_type_dict[current_scope] = dict()
-            self._scope_type_dict[current_scope][node.identifier] = node # Вставляем тип в нужный scope
-        if len(types) == 0 : self._raise_exception('Type block is empty but declired')
-        return types
+    # Parsing CONST declaration
+    def __parse_CONST_statement(self):
+        node = NodeConstantDeclaration()
+        self.__expect('IDENTIFIER')
+        node.identifier = self.__pop_value()
+        self.__expect_and_move('EQUALITY')
+        node.value = self.__parse_condition()
+        node.type = self.__semantic_module.predict_condition_type(node.value, self.scope)
+        if isinstance(node.type, NodeType):
+            node.type = node.type.identifier
+        else:
+            node.type = node.type.value
+        self.__semantic_module.add_const(self.current_scope, node.identifier, node)
+        return node
 
-    def _parse_subroutine(self):
+    # Parsing TYPE declaration
+    def __parse_TYPE_statement(self):
+        node = NodeTypeDeclaration()
+        self.__expect('IDENTIFIER')
+        node.identifier = self.__pop_value()
+        self.__expect_and_move('EQUALITY')
+        node.type = self.__parse_type()
+        self.__semantic_module.add_type(self.current_scope, node.identifier, node.type)
+        if isinstance(node.type, NodeType):
+            node.type = node.type.identifier
+        elif isinstance(node.type, PrimitiveType):
+            node.type = node.type.value
+        return node
+
+    def __parse_SUBROUTINE(self):
         node = NodeSubroutine()
-        if not self._check('FUNCTION') and not self._check('PROCEDURE'):
-            self._expect_and_move('PROCEDURE')
-        node.subroutine_type = SubroutineType(self._pop_token())
-        self._expect('IDENTIFIER')
-        node.identifier = self._pop_identifier()
+        node.subroutine_type = SubroutineType(self.__pop_token())
+        self.__expect('IDENTIFIER')
+        node.identifier = self.__pop_value()
+        self.__expect_and_move('LPAREN')
         self.current_scope.append(node.identifier)
-        node.formal_params = self._parse_subroutine_formal_params()
+        node.formal_params = self.__parse_SUBROUTINE_FORMAL_PARAMS()
+        self.__expect_and_move('RPAREN')
         if node.subroutine_type == SubroutineType.FUNCTION:
-            self._expect_and_move('COLON')
-            node.retunr_type = self._parse_type()
-        self._expect_and_move('SEMICOLON')
-        if self._check('FORWARD'):
-            self._next_token()
+            self.__expect_and_move('COLON')
+            node.type = self.__parse_type()
+        else:
+            node.type = PrimitiveType.UNDEFINED
+        self.__semantic_module.add_subroutine(self.current_scope[:-1], node.identifier, node.type, node.formal_params)
+        if isinstance(node.type, NodeType):
+            node.type = self.node.identifier
+        else:
+            node.type = node.type.value
+        self.__expect_and_move('SEMICOLON')
+        if self.__check('FORWARD'):
+            self.__next_token()
             node.is_forward_declaration = True
         else:
             node.declaration_part = self._parse_declaration_part()
-            node.statement_part = self._parse_statement_block()
-            self._expect_and_move('SEMICOLON')
+            self.__expect('BEGIN')
+            node.statement_part = self.__parse_STATEMENT_BLOCK()
+            self.__expect_and_move('SEMICOLON')
         self.current_scope.pop()
         return node
 
-    def _parse_subroutine_formal_params(self):
-        node = NodeSubroutineFormalParams()
-        self._expect_and_move('LPAREN')
-        while not self._check('RPAREN'):
-            variables = list()
-            while not self._check_all(('RPAREN', 'COLON')):
-                self._expect('IDENTIFIER')
-                variables.append(self._pop_identifier())
-                if self._check('COMMA'):
-                    self._next_token()
-            self._next_token()
-            _type = self._parse_type()
-            if self._check('SEMICOLON'):
-                self._next_token()
-            for variable in variables:
-                node.append(NodeVariableDeclaration(variable, _type))
-        self._next_token()
+    def __parse_SUBROUTINE_FORMAL_PARAMS(self):
+        node = NodeSubroutineFormalParams(list())
+        while not self.__check('RPAREN'):
+            node.extend(self.__parse_VAR_statement())
+            if self.__check('SEMICOLON'):
+                self.__next_token()
         return node
-
-    def _parse_type(self):
-        if self._check('ARRAY'):
-            return self._parse_array_type()
-        elif self._check('RECORD'):
-            self._next_token()
+            
+    def __parse_type(self):
+        if self.__check('ARRAY'):
+            self.__next_token()
+            return self.__parse_ARRAY_TYPE()
+        elif self.__check('RECORD'):
+            self.__next_token()
             raise NotImplementedError('ИМПЛЕМЕНТИРУЙ RECORD')
         elif PrimitiveType.__contains__(self.current_token[0]):
-            return self._pop_token()
+            return PrimitiveType[self.__pop_token()]
         else:
-            self._expect('IDENTIFIER')
-            custom_type = self._pop_identifier()
-            scope_parts = list(self.current_scope)
-            while len(scope_parts) > 0:
-                scope = '.'.join(scope_parts)
-                if scope in self._scope_type_dict:
-                    if custom_type in self._scope_type_dict[scope]:
-                        return self._scope_type_dict[scope][custom_type]
-                scope_parts.pop()
-            self._raise_exception(f'Type {custom_type} is not declared')
-        
-    def _parse_array_type(self):
+            self.__expect('IDENTIFIER')
+            custom_type = self.__pop_value()
+            return self.__semantic_module.get_type(self.current_scope, custom_type)
+    
+    def __parse_ARRAY_TYPE(self):
         node = NodeArrayType()
-        self._expect_and_move('ARRAY')
-        self._expect_and_move('LSBR')
-        node.left_bound = self._parse_factor()
-        self._expect_and_move('DOT')
-        self._expect_and_move('DOT')
-        node.right_bound = self._parse_factor()
-        self._expect_and_move('RSBR')
-        self._expect_and_move('OF')
-        node.type = self._parse_type()
+        self.__expect_and_move('LSBR')
+        node.left_bound = self.__parse_factor()
+        self.__expect_and_move('DOT')
+        self.__expect_and_move('DOT')
+        node.right_bound = self.__parse_factor()
+        self.__expect_and_move('RSBR')
+        self.__expect_and_move('OF')
+        node.type = self.__parse_type()
+        return node
+    
+    # Parsing condition expression
+    def __parse_condition(self):
+        left = self.__parse_expression()
+        while self.__check_all(('EQUALITY', 'NONEQUALITY', 'GREATER', 'SMALLER')):
+            operator = Operator(self.__pop_token())
+            right = self.__parse_expression()
+            left = NodeBinaryOperator(left, right, operator)
+        return left
+
+    # Prasing expression
+    def __parse_expression(self):
+        left = self.__parse_term()
+        while self.__check_all(('PLUS', 'MINUS', 'OR', 'XOR')):
+            operator = Operator(self.__pop_token())
+            right = self.__parse_term()
+            left = NodeBinaryOperator(left, right, operator)
+        return left
+
+    # Parsing term
+    def __parse_term(self):
+        left = self.__parse_factor()
+        while self.__check_all(('MULTIPLY', 'DIVIDE','DIV', 'MOD', 'AND', 'SHL', 'SHR')):
+            operator = Operator(self.__pop_token())
+            right = self.__parse_factor()
+            left = NodeBinaryOperator(left, right, operator)
+        return left
+
+    # Parsing factor
+    def __parse_factor(self):
+        match self.current_token[0]:
+            case 'NUMBER':
+                possible_number = self.__pop_value()
+                _type = self.__semantic_module.return_value_type(possible_number)
+                return NodeValue(possible_number, _type)
+            case 'TRUE' | 'FALSE':
+                return NodeValue(self.__pop_value(), PrimitiveType.BOOLEAN)
+            case 'QUOTES':
+                return self.__parse_STRING()
+            case 'LPAREN':
+                self.__next_token()
+                condition = self.__parse_condition()
+                self.__expect_and_move('RPAREN')
+                return condition
+            case 'MINUS':
+                self.__next_token()
+                condition = self.__parse_condition()
+                if isinstance(condition, NodeValue):
+                    new_value = f'-{condition.value}'
+                    _type = self.__semantic_module.return_value_type(new_value)
+                    return NodeValue(new_value, _type)
+                else:
+                    return NodeUnaryOperator(condition, Operator.UNARY_MINUS)
+            case 'PLUS':
+                self.__next_token()
+                condition = self.__parse_condition()
+                return condition
+            case _:
+                self.__expect('IDENTIFIER')
+                return self.__parse_IDENTIFIER_STATEMENT()
+
+    # Parinsg variable or Subroutine/array call
+    def __parse_IDENTIFIER_STATEMENT(self):    
+        self.__expect('IDENTIFIER')
+        left = NodeVariable(self.__pop_value())
+        # Проверка на существование переменной
+        self.__semantic_module.get_variable(self.current_scope, left.identifier)
+        while self.__check_all(('ASSIGN', 'LPAREN', 'LSBR', 'DOT')):
+            match self.current_token[0]:
+                case 'ASSIGN':
+                    self.__next_token()
+                    right = self.__parse_condition()
+                    # self.__semantic_module.check_assign(left, right)
+                    variable = left
+                    while not isinstance(left, NodeVariable):
+                        left = left.left
+                    self.__semantic_module.check_assign(self.current_scope, left.identifier, right)
+                    left = NodeBinaryOperator(left, right, Operator.ASSIGN)
+                case 'LPAREN':
+                    self.__next_token()
+                    right = self.__parse_SUBROUTINE_CALL_PARAMS()
+                    self.__semantic_module.check_subroutine_call(self.current_scope, left.identifier, right)
+                    left = NodeBinaryOperator(left, right, Operator.SUBROUTINE_CALL)
+                case 'LSBR':
+                    self.__next_token()
+                    right = self.__parse_ARRAY_CALL()
+                    self.__semantic_module.check_array_access(self.current_scope, left.identifier, right)
+                    left = NodeBinaryOperator(left, right, Operator.ARRAY_CALL)
+                case 'DOT':
+                    raise NotImplementedError('ИМПЛЕМЕНТИРУЙ ОБРАЩЕНИЕ К ОБЪЕКТУ')
+        return left
+
+    # Parsing subroution call params
+    def __parse_SUBROUTINE_CALL_PARAMS(self):
+        node = NodeCallParams(list())
+        while not self.__check('RPAREN'):
+            node.append(self.__parse_condition())
+            if self.__check('COMMA'):
+                self.__next_token()
+        self.__next_token()
         return node
 
-    def _parse_statement(self):
-        node = None
-        if self._check('IF'):
-            node = self._parse_if_statement()
-        if self._check('CASE'):
-            node = self._parse_switch_statement()
-        elif self._check('WHILE'):
-            node = self._parse_while_statement()
-        elif self._check('FOR'):
-            node = self._parse_for_statement()
-        elif self._check('REPEAT'):
-            node = self._parse_repeat_until_statement()
-        elif self._check('IDENTIFIER'):
-            node = self._parse_identifier_statement()
-            if self.current_token[0] not in ('END', 'ELSE'):
-                self._expect_and_move('SEMICOLON')
-        elif self._check('RETURN'):
-            self._raise_exception('Illegal expression')
-        return node   
-    
-    def _parse_identifier_statement(self):
-        self._expect('IDENTIFIER')
-        left = NodeVariable(self._pop_identifier())
-        while self._check_all(('ASSIGN', 'LPAREN', 'LSBR', 'DOT')):
-            if self._check('ASSIGN'):
-                self._next_token()
-                right = self._parse_condition()
-                left = NodeBinaryOperator(left, right, BinaryOperatorType.ASSIGN)
-            elif self._check('LPAREN'):
-                right = self._parse_subroutine_call()
-                left = NodeBinaryOperator(left, right, BinaryOperatorType.SUBROUTINE_CALL)                
-            elif self._check('LSBR'):
-                right = self._parse_array_call()
-                left = NodeBinaryOperator(left, right, BinaryOperatorType.ARRAY_CALL)
-            elif self._check('DOT'):
-                raise NotImplementedError('ИМПЛЕМЕНТИРУЙ ОБРАЩЕНИЕ К ОБЪЕКТУ')
-        return left
+    def __parse_ARRAY_CALL(self):
+        node = NodeCallParams(list())
+        while not self.__check('RSBR'):
+            node.append(self.__parse_expression())
+            if self.__check('COMMA'):
+                self.__next_token()
+        self.__next_token()
+        return node
 
-    def _parse_array_call(self):
-        self._expect_and_move('LSBR')
-        params = list()
-        while not self._check('RSBR'):
-            params.append(self._parse_expression())
-            if self._check('COMMA'):
-                self._next_token()
-        self._next_token()
-        return NodeCallParams(params)
-
-    def _parse_subroutine_call(self):
-        self._expect_and_move('LPAREN')
-        params = list()
-        while not self._check('RPAREN'):
-            params.append(self._parse_expression())
-            if self._check('COMMA'):
-                self._next_token()
-        self._next_token()
-        return NodeCallParams(params)
-    
-    def _parse_statement_block(self):
-        statements = list()
-        self._expect_and_move('BEGIN')
-        while not self._check('END'):
-            statements.append(self._parse_statement())
-            if self._check('SEMICOLON'):
-                self._next_token()
-        self._next_token()
-        return NodeStatementPart(statements)
-
-    def _parse_if_statement(self):
-        self._expect_and_move('IF')
-        condition = self._parse_condition()
-        self._expect_and_move('THEN')
-        then_statement_part = NodeStatementPart(list())
-        if self._check('BEGIN'):
-            then_statement_part = self._parse_statement_block()
+    # Parsing statement block
+    def __parse_STATEMENT_BLOCK(self):
+        statement_block = NodeStatementPart(list())
+        if self.__check('BEGIN'):
+            self.__next_token()
+            while not self.__check('END'):
+                statement_block.append(self.__parse_STATEMENT())
+                if self.__check('SEMICOLON'):
+                    self.__next_token()
+            self.__next_token()
         else:
-            then_statement_part.append(self._parse_statement())
-        else_statement_part = NodeStatementPart(list())
-        if self._check('ELSE'):
-            self._next_token()
-            if self._check('BEGIN'):
-                else_statement_part = self._parse_statement_block()
-            else:
-                else_statement_part.append(self._parse_statement())
-        return NodeIfStatement(condition, then_statement_part, else_statement_part)
+            statement_block.append(self.__parse_STATEMENT())
+        return statement_block
 
-    def _parse_switch_statement(self):
-        self._expect_and_move('CASE')
-        variable = self._parse_identifier_statement()
-        self._expect_and_move('OF')
-        case_blocks = list()
-        while not self._check('END'):
-            case_block = NodeCaseBlock(list(), NodeStatementPart(list()))
-            while not self._check('COLON'):
-                case_block.append_case(self._pop_identifier())
-                if self._check('COMMA'): self._next_token()
-            self._expect_and_move('COLON')
-            if self._check('BEGIN'):
-                case_block.statement_part = self._parse_statement_block()
-            else: 
-                case_block.append_statement(self._parse_statement())
-            case_blocks.append(case_block)
-        self._expect_and_move('END')
-        return NodeSwitchStatement(variable, case_blocks)
+    def __parse_STATEMENT(self):
+        match self.current_token[0]:
+            case 'LCOM':
+                self.__next_token()
+                pass
+            case 'IF':
+                self.__next_token()
+                node = self.__parse_IF_STATEMENT()
+            case 'CASE':
+                self.__next_token()
+                pass
+            case 'FOR':
+                self.__next_token()
+                node = self.__parse_FOR_STATEMENT()
+            case 'WHILE':
+                self.__next_token()
+                node = self.__parse_WHILE_STATEMENT()
+            case 'REPEAT':
+                self.__next_token()
+                node = self.__parse_REPEAT_STATEMENT()
+            case 'IDENTIFIER':
+                node = self.__parse_IDENTIFIER_STATEMENT()
+        return node
 
-    def _parse_for_statement(self):
-        self._expect_and_move('FOR')
-        self._expect('IDENTIFIER')
-        variable = NodeVariable(self._pop_identifier())
-        self._expect_and_move('ASSIGN')
-        initial_expression = self._parse_expression()
-        is_increase = False
-        if self._check('DOWNTO'):
-            is_increase = not self._expect_and_move('DOWNTO')
-        else:
-            is_increase = self._expect_and_move('TO')
-        end_expression = self._parse_expression()
-        self._expect_and_move('DO')
-        statement_part = NodeStatementPart(list())
-        if self._check('BEGIN'):
-            statement_part = self._parse_statement_block()
-        else:
-            statement_part.append(self._parse_statement())
-        return NodeForStatement(variable, initial_expression, end_expression, statement_part, is_increase)
+    def __parse_IF_STATEMENT(self):
+        node = NodeIfStatement()
+        node.condition = self.__parse_condition()
+        self.__expect_and_move('THEN')
+        node.then_statement_part = self.__parse_STATEMENT_BLOCK()
+        if self.__check('ELSE'):
+            node.else_statement_part = self.__parse_STATEMENT_BLOCK()
+        return node
 
-    def _parse_while_statement(self):
-        self._expect_and_move('WHILE')
-        condition = self._parse_condition()
-        self._expect_and_move('DO')
-        statement_part = NodeStatementPart(list())
-        if self._check('BEGIN'):
-            statement_part = self._parse_statement_block()
-        else:
-            statement_part.append(self._parse_statement())
-        return NodeWhileStatement(condition, statement_part)
+    def __parse_FOR_STATEMENT(self):
+        node = NodeForStatement()
+        self.__expect('IDENTIFIER')
+        node.variable = NodeVariable(self.__pop_value())
+        self.__semantic_module.get_variable(self.current_scope, node.variable.identifier)
+        if self.__check('ASSIGN'):
+            self.__next_token()
+            expression = self.__parse_expression()
+            self.__semantic_module.check_assign(self.current_scope, node.variable.identifier, expression)
+            node.initial_expression = expression
+        self.__expect_and_move('TO')
+        node.end_expression = self.__parse_expression()
+        self.__expect_and_move('DO')
+        node.statement_part = self.__parse_STATEMENT_BLOCK()
+        return node
 
-    def _parse_repeat_until_statement(self):
-        self._expect_and_move('REPEAT')
-        statement_part = NodeStatementPart(list())
-        while not self._check('UNTIL'):
-            statement_part.append(self._parse_statement())
-        self._expect_and_move('UNTIL')
-        condition = self._parse_condition()
-        self._expect_and_move('SEMICOLON')
-        return NodeRepeatUntilStatement(condition, statement_part)
+    def __parse_WHILE_STATEMENT(self):
+        node = NodeWhileStatement()
+        node.condition = self.__parse_condition()
+        self.__expect_and_move('DO')
+        node.statement_block = self.__parse_STATEMENT_BLOCK()
+        return node       
 
-    def _parse_comment(self):
-        self._expect_and_move('LCOM')
-        comment = ''
-        counter = 0
-        while not self._check('RCOM'):
-            comment += self._pop_identifier()
-            counter += 1
-            if counter % 10 == 0:
-                comment += '\n'
-        return NodeComment(comment)
-
-
-    def _parse_condition(self):
-        left = self._parse_expression()
-        while self.current_token[0] in ('EQUALITY', 'NONEQUALITY', 'GREATER', 'SMALLER'):
-            operator = self._pop_token()
-            right = self._parse_expression()
-            left = NodeBinaryOperator(left, right, BinaryOperatorType(operator))
-        return left
-
-    def _parse_expression(self):
-        left = self._parse_term()
-        while self.current_token[0] in ('PLUS', 'MINUS', 'OR', 'XOR'):
-            operator = self._pop_token()
-            right = self._parse_term()
-            left = NodeBinaryOperator(left, right, BinaryOperatorType(operator))
-        return left
-    
-    def _parse_term(self):
-        left = self._parse_factor()
-        while self.current_token[0] in ('MULTIPLY', 'DIVIDE','DIV', 'MOD', 'AND', 'SHL', 'SHR'):
-            operator = self._pop_token()
-            right = self._parse_factor()
-            left = NodeBinaryOperator(left, right, BinaryOperatorType(operator))
-        return left
-
-    def _parse_factor(self):
-        if self._check('LPAREN'):
-            self._next_token()
-            expression = self._parse_condition()
-            self._expect_and_move('RPAREN')
-            return expression
-        elif self._check('NOT'):
-            self._next_token()
-            condition = self._parse_condition()
-            return NodeUnaryOperator(condition, UnaryOperatorType.NOT)
-        elif self.current_token[0] in ('PLUS', 'MINUS'): # Разбор унарного + и -
-            operator = self._pop_token()
-            expression = self._parse_expression()
-            return NodeUnaryOperator(expression, UnaryOperatorType(operator))
-        # Блок разбора переменных, строк и чисел
-        elif self._check('QUOTES'):
-            self._next_token()
-        elif self._check_all(('NUMBER', 'TRUE', 'FALSE')):
-            return NodeValue(self._pop_identifier())
-        elif self._check('IDENTIFIER'):
-            return self._parse_identifier_statement()
-        else: self._expect_and_move('IDENTIFIER')
-
-    def _parse_string(self):
-        self._expect_and_move('QUOTES')
-        string = ''
-        while not self._check('QUOTES'):
-            string += self._pop_identifier()
-            self._expect_and_move('QUOTES')
-        return NodeValue(string)
-
+    def __parse_REPEAT_STATEMENT(self):
+        node = NodeRepeatUntilStatement(None, NodeStatementPart(list()))
+        while not self.__check('UNTIL'):
+            node.statement_part.append(self.__parse_STATEMENT())
+            self.__expect_and_move('SEMICOLON')
+        self.__next_token()
+        node.condition = self.__parse_condition()
+        return node
             
 if __name__ == '__main__':
     reader = open('comp/test.pas', 'r')

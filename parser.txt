@@ -1,163 +1,102 @@
 NodeProgram
 |+-identifier: V1
 |+-global_declaration: NodeDeclarationPart
-|   |+-NodeConst
-|   |   |+-identifier: N
-|   |   |+-expression: NodeValue
-|   |   |   |+-value: 10
-|   |+-NodeType
-|   |   |+-identifier: customArray
+|   |+-NodeTypeDeclaration
+|   |   |+-identifier: myArray
 |   |   |+-type: NodeArrayType
+|   |   |   |+-identifier: 
 |   |   |   |+-left_bound: NodeValue
-|   |   |   |   |+-value: 1
-|   |   |   |+-right_bound: NodeVariable
-|   |   |   |   |+-identifier: N
+|   |   |   |   |+-value: 0
+|   |   |   |   |+-type: BYTE
+|   |   |   |+-right_bound: NodeValue
+|   |   |   |   |+-value: 50
+|   |   |   |   |+-type: BYTE
 |   |   |   |+-type: INTEGER
 |   |+-NodeVariableDeclaration
-|   |   |+-identifier: i
+|   |   |+-identifier: arr
+|   |   |+-type: <SemanticModule.TypeVariable object at 0x7f48a978ca50>
+|   |+-NodeVariableDeclaration
+|   |   |+-identifier: index
 |   |   |+-type: INTEGER
 |   |+-NodeVariableDeclaration
-|   |   |+-identifier: arr
-|   |   |+-type: NodeType
-|   |   |   |+-identifier: customArray
-|   |   |   |+-type: NodeArrayType
-|   |   |   |   |+-left_bound: NodeValue
-|   |   |   |   |   |+-value: 1
-|   |   |   |   |+-right_bound: NodeVariable
-|   |   |   |   |   |+-identifier: N
-|   |   |   |   |+-type: INTEGER
+|   |   |+-identifier: temp
+|   |   |+-type: INTEGER
 |   |+-NodeSubroutine
-|   |   |+-identifier: sortArray
-|   |   |+-subroutine_type: PROCEDURE
-|   |   |+-retunr_type: None
+|   |   |+-identifier: factorial
+|   |   |+-subroutine_type: FUNCTION
+|   |   |+-type: INTEGER
 |   |   |+-formal_params: NodeSubroutineFormalParams
 |   |   |   |+-NodeVariableDeclaration
-|   |   |   |   |+-identifier: arr
-|   |   |   |   |+-type: NodeType
-|   |   |   |   |   |+-identifier: customArray
-|   |   |   |   |   |+-type: NodeArrayType
-|   |   |   |   |   |   |+-left_bound: NodeValue
-|   |   |   |   |   |   |   |+-value: 1
-|   |   |   |   |   |   |+-right_bound: NodeVariable
-|   |   |   |   |   |   |   |+-identifier: N
-|   |   |   |   |   |   |+-type: INTEGER
-|   |   |   |+-NodeVariableDeclaration
-|   |   |   |   |+-identifier: N
+|   |   |   |   |+-identifier: n
 |   |   |   |   |+-type: INTEGER
 |   |   |+-declaration_part: NodeDeclarationPart
 |   |   |   |+-NodeVariableDeclaration
-|   |   |   |   |+-identifier: i
+|   |   |   |   |+-identifier: res
 |   |   |   |   |+-type: INTEGER
 |   |   |   |+-NodeVariableDeclaration
-|   |   |   |   |+-identifier: j
-|   |   |   |   |+-type: INTEGER
-|   |   |   |+-NodeVariableDeclaration
-|   |   |   |   |+-identifier: temp
+|   |   |   |   |+-identifier: counter
 |   |   |   |   |+-type: INTEGER
 |   |   |+-statement_part: NodeStatementPart
+|   |   |   |+-NodeBinaryOperator
+|   |   |   |   |+-left: NodeVariable
+|   |   |   |   |   |+-identifier: counter
+|   |   |   |   |+-right: NodeValue
+|   |   |   |   |   |+-value: 1
+|   |   |   |   |   |+-type: BYTE
+|   |   |   |   |+-operation_type: ASSIGN
 |   |   |   |+-NodeForStatement
 |   |   |   |   |+-variable: NodeVariable
-|   |   |   |   |   |+-identifier: i
+|   |   |   |   |   |+-identifier: counter
 |   |   |   |   |+-initial_expression: NodeValue
 |   |   |   |   |   |+-value: 1
+|   |   |   |   |   |+-type: BYTE
 |   |   |   |   |+-end_expression: NodeVariable
-|   |   |   |   |   |+-identifier: N
+|   |   |   |   |   |+-identifier: n
 |   |   |   |   |+-statement_part: NodeStatementPart
-|   |   |   |   |   |+-NodeForStatement
-|   |   |   |   |   |   |+-variable: NodeVariable
-|   |   |   |   |   |   |   |+-identifier: j
-|   |   |   |   |   |   |+-initial_expression: NodeValue
-|   |   |   |   |   |   |   |+-value: 1
-|   |   |   |   |   |   |+-end_expression: NodeVariable
-|   |   |   |   |   |   |   |+-identifier: N
-|   |   |   |   |   |   |+-statement_part: NodeStatementPart
-|   |   |   |   |   |   |   |+-NodeIfStatement
-|   |   |   |   |   |   |   |   |+-_condition: NodeBinaryOperator
-|   |   |   |   |   |   |   |   |   |+-left: NodeBinaryOperator
-|   |   |   |   |   |   |   |   |   |   |+-left: NodeVariable
-|   |   |   |   |   |   |   |   |   |   |   |+-identifier: arr
-|   |   |   |   |   |   |   |   |   |   |+-right: NodeCallParams
-|   |   |   |   |   |   |   |   |   |   |   |+-NodeVariable
-|   |   |   |   |   |   |   |   |   |   |   |   |+-identifier: i
-|   |   |   |   |   |   |   |   |   |   |+-operation_type: ARRAY_CALL
-|   |   |   |   |   |   |   |   |   |+-right: NodeBinaryOperator
-|   |   |   |   |   |   |   |   |   |   |+-left: NodeVariable
-|   |   |   |   |   |   |   |   |   |   |   |+-identifier: arr
-|   |   |   |   |   |   |   |   |   |   |+-right: NodeCallParams
-|   |   |   |   |   |   |   |   |   |   |   |+-NodeVariable
-|   |   |   |   |   |   |   |   |   |   |   |   |+-identifier: j
-|   |   |   |   |   |   |   |   |   |   |+-operation_type: ARRAY_CALL
-|   |   |   |   |   |   |   |   |   |+-operation_type: SMALLER
-|   |   |   |   |   |   |   |   |+-then_statement_part: NodeStatementPart
-|   |   |   |   |   |   |   |   |   |+-NodeBinaryOperator
-|   |   |   |   |   |   |   |   |   |   |+-left: NodeVariable
-|   |   |   |   |   |   |   |   |   |   |   |+-identifier: temp
-|   |   |   |   |   |   |   |   |   |   |+-right: NodeBinaryOperator
-|   |   |   |   |   |   |   |   |   |   |   |+-left: NodeVariable
-|   |   |   |   |   |   |   |   |   |   |   |   |+-identifier: arr
-|   |   |   |   |   |   |   |   |   |   |   |+-right: NodeCallParams
-|   |   |   |   |   |   |   |   |   |   |   |   |+-NodeVariable
-|   |   |   |   |   |   |   |   |   |   |   |   |   |+-identifier: i
-|   |   |   |   |   |   |   |   |   |   |   |+-operation_type: ARRAY_CALL
-|   |   |   |   |   |   |   |   |   |   |+-operation_type: ASSIGN
-|   |   |   |   |   |   |   |   |   |+-NodeBinaryOperator
-|   |   |   |   |   |   |   |   |   |   |+-left: NodeBinaryOperator
-|   |   |   |   |   |   |   |   |   |   |   |+-left: NodeVariable
-|   |   |   |   |   |   |   |   |   |   |   |   |+-identifier: arr
-|   |   |   |   |   |   |   |   |   |   |   |+-right: NodeCallParams
-|   |   |   |   |   |   |   |   |   |   |   |   |+-NodeVariable
-|   |   |   |   |   |   |   |   |   |   |   |   |   |+-identifier: i
-|   |   |   |   |   |   |   |   |   |   |   |+-operation_type: ARRAY_CALL
-|   |   |   |   |   |   |   |   |   |   |+-right: NodeBinaryOperator
-|   |   |   |   |   |   |   |   |   |   |   |+-left: NodeVariable
-|   |   |   |   |   |   |   |   |   |   |   |   |+-identifier: arr
-|   |   |   |   |   |   |   |   |   |   |   |+-right: NodeCallParams
-|   |   |   |   |   |   |   |   |   |   |   |   |+-NodeVariable
-|   |   |   |   |   |   |   |   |   |   |   |   |   |+-identifier: j
-|   |   |   |   |   |   |   |   |   |   |   |+-operation_type: ARRAY_CALL
-|   |   |   |   |   |   |   |   |   |   |+-operation_type: ASSIGN
-|   |   |   |   |   |   |   |   |   |+-NodeBinaryOperator
-|   |   |   |   |   |   |   |   |   |   |+-left: NodeBinaryOperator
-|   |   |   |   |   |   |   |   |   |   |   |+-left: NodeVariable
-|   |   |   |   |   |   |   |   |   |   |   |   |+-identifier: arr
-|   |   |   |   |   |   |   |   |   |   |   |+-right: NodeCallParams
-|   |   |   |   |   |   |   |   |   |   |   |   |+-NodeVariable
-|   |   |   |   |   |   |   |   |   |   |   |   |   |+-identifier: j
-|   |   |   |   |   |   |   |   |   |   |   |+-operation_type: ARRAY_CALL
-|   |   |   |   |   |   |   |   |   |   |+-right: NodeBinaryOperator
-|   |   |   |   |   |   |   |   |   |   |   |+-left: NodeVariable
-|   |   |   |   |   |   |   |   |   |   |   |   |+-identifier: arr
-|   |   |   |   |   |   |   |   |   |   |   |+-right: NodeCallParams
-|   |   |   |   |   |   |   |   |   |   |   |   |+-NodeVariable
-|   |   |   |   |   |   |   |   |   |   |   |   |   |+-identifier: i
-|   |   |   |   |   |   |   |   |   |   |   |+-operation_type: ARRAY_CALL
-|   |   |   |   |   |   |   |   |   |   |+-operation_type: ASSIGN
-|   |   |   |   |   |   |   |   |+-else_statement_part: NodeStatementPart
-|   |   |   |   |   |   |+-is_increase: True
-|   |   |   |   |+-is_increase: True
+|   |   |   |   |   |+-NodeBinaryOperator
+|   |   |   |   |   |   |+-left: NodeVariable
+|   |   |   |   |   |   |   |+-identifier: res
+|   |   |   |   |   |   |+-right: NodeBinaryOperator
+|   |   |   |   |   |   |   |+-left: NodeVariable
+|   |   |   |   |   |   |   |   |+-identifier: res
+|   |   |   |   |   |   |   |+-right: NodeVariable
+|   |   |   |   |   |   |   |   |+-identifier: counter
+|   |   |   |   |   |   |   |+-operation_type: MULTIPLY
+|   |   |   |   |   |   |+-operation_type: ASSIGN
+|   |   |   |   |+-is_increase: False
+|   |   |   |+-NodeBinaryOperator
+|   |   |   |   |+-left: NodeVariable
+|   |   |   |   |   |+-identifier: factorial
+|   |   |   |   |+-right: NodeVariable
+|   |   |   |   |   |+-identifier: res
+|   |   |   |   |+-operation_type: ASSIGN
 |   |   |+-is_forward_declaration: False
 |+-statement_part: NodeStatementPart
 |   |+-NodeForStatement
 |   |   |+-variable: NodeVariable
-|   |   |   |+-identifier: i
+|   |   |   |+-identifier: index
 |   |   |+-initial_expression: NodeValue
-|   |   |   |+-value: 1
-|   |   |+-end_expression: NodeVariable
-|   |   |   |+-identifier: N
+|   |   |   |+-value: 0
+|   |   |   |+-type: BYTE
+|   |   |+-end_expression: NodeValue
+|   |   |   |+-value: 50
+|   |   |   |+-type: BYTE
 |   |   |+-statement_part: NodeStatementPart
 |   |   |   |+-NodeBinaryOperator
-|   |   |   |   |+-left: NodeBinaryOperator
-|   |   |   |   |   |+-left: NodeVariable
-|   |   |   |   |   |   |+-identifier: arr
-|   |   |   |   |   |+-right: NodeCallParams
-|   |   |   |   |   |   |+-NodeVariable
-|   |   |   |   |   |   |   |+-identifier: i
-|   |   |   |   |   |+-operation_type: ARRAY_CALL
+|   |   |   |   |+-left: NodeVariable
+|   |   |   |   |   |+-identifier: temp
 |   |   |   |   |+-right: NodeBinaryOperator
 |   |   |   |   |   |+-left: NodeVariable
-|   |   |   |   |   |   |+-identifier: i
-|   |   |   |   |   |+-right: NodeVariable
-|   |   |   |   |   |   |+-identifier: i
-|   |   |   |   |   |+-operation_type: MULTIPLY
+|   |   |   |   |   |   |+-identifier: factorial
+|   |   |   |   |   |+-right: NodeCallParams
+|   |   |   |   |   |   |+-NodeVariable
+|   |   |   |   |   |   |   |+-identifier: index
+|   |   |   |   |   |+-operation_type: SUBROUTINE_CALL
 |   |   |   |   |+-operation_type: ASSIGN
-|   |   |+-is_increase: True
+|   |   |   |+-NodeBinaryOperator
+|   |   |   |   |+-left: NodeVariable
+|   |   |   |   |   |+-identifier: arr
+|   |   |   |   |+-right: NodeVariable
+|   |   |   |   |   |+-identifier: temp
+|   |   |   |   |+-operation_type: ASSIGN
+|   |   |+-is_increase: False

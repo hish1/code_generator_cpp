@@ -15,6 +15,8 @@ regex_patterns = {
     'CHAR': r'char',
     'STRING': r'string',
     'ARRAY': r'array',
+    'TRUE': r'TRUE',
+    'FALSE': r'FALSE',
     'OF': r'of',
     'IF': r'if',
     'THEN': r'then',
