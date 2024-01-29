@@ -6,11 +6,12 @@ import re
 import math
 
 base_type_upcast = {}
+assign_support = set()
 
-# https://pascalabc.net/downloads/pabcnethelp/index.htm?page=LangGuide/Types/real.html 
+# https://pascalabc.net/downloads/pabcnethelp/index.htm?page=LangGuide/Types/index_types.html 
 # Opeartions upcast on + - and * (not /)
-for type1 in PT.get_all_integer_integer_types():
-    for type2 in PT.get_all_integer_integer_types():
+for type1 in PT.get_all_integer_types():
+    for type2 in PT.get_all_integer_types():
         increase_weight = 2**math.ceil(math.log2(type1.byte_weight + type2.byte_weight))
         max_divide_weight = type1.byte_weight if type1.byte_weight > type2.byte_weight else type2.byte_weight
         if PT.is_type_signed_integer(type1) or PT.is_type_signed_integer(type2):
@@ -25,8 +26,35 @@ for type1 in PT.get_all_integer_integer_types():
         base_type_upcast[(type1, type2, OP.DIVIDE)] = current_level_type
         base_type_upcast[(type1, type2, OP.DIV)] = current_level_type
         base_type_upcast[(type1, type2, OP.MOD)] = current_level_type
+        assign_support.add((type1, type2))
 
-for type in PT.get_all_integer_integer_types():
+for type1 in PT.get_float_types():
+    for type2 in PT.get_all_integer_types():
+        base_type_upcast[(type1, type2, OP.PLUS)] = PT.REAL
+        base_type_upcast[(type2, type1, OP.PLUS)] = PT.REAL
+        base_type_upcast[(type1, type2, OP.MINUS)] = PT.REAL
+        base_type_upcast[(type2, type1, OP.MINUS)] = PT.REAL
+        base_type_upcast[(type1, type2, OP.MULTIPLY)] = PT.REAL
+        base_type_upcast[(type2, type1, OP.MULTIPLY)] = PT.REAL
+        base_type_upcast[(type1, type2, OP.DIVIDE)] = PT.REAL
+        base_type_upcast[(type2, type1, OP.DIVIDE)] = PT.REAL
+        assign_support.add((type1, type2))
+
+for type1 in PT.get_float_types():
+    for type2 in PT.get_float_types():
+        if type1 != PT.DECIMAL and type2 != PT.DECIMAL:
+            base_type_upcast[(type1, type2, OP.PLUS)] = PT.REAL
+            base_type_upcast[(type1, type2, OP.MINUS)] = PT.REAL
+            base_type_upcast[(type1, type2, OP.MULTIPLY)] = PT.REAL
+            base_type_upcast[(type1, type2, OP.DIVIDE)] = PT.REAL
+            assign_support.add((type1, type2))
+
+base_type_upcast[(PT.DECIMAL, PT.DECIMAL, OP.PLUS)] = PT.DECIMAL
+base_type_upcast[(PT.DECIMAL, PT.DECIMAL, OP.MINUS)] = PT.DECIMAL
+base_type_upcast[(PT.DECIMAL, PT.DECIMAL, OP.MULTIPLY)] = PT.DECIMAL
+base_type_upcast[(PT.DECIMAL, PT.DECIMAL, OP.DIVIDE)] = PT.DECIMAL
+
+for type in PT.get_all_integer_types():
     if PT.is_type_unsigned_integer(type):
         base_type_upcast[(type, OP.UNARY_MINUS)] = PT.get_signed_int_by_weight(type.byte_weight)
     else:
@@ -36,8 +64,11 @@ for type in PT.get_all_integer_integer_types():
 base_type_upcast[(PT.STRING, PT.STRING, OP.PLUS)] = PT.STRING
 base_type_upcast[(PT.STRING, PT.CHAR, OP.PLUS)] = PT.STRING
 base_type_upcast[(PT.CHAR, PT.CHAR, OP.PLUS)] = PT.STRING
-         
 
+assign_support.add((PT.BOOLEAN, PT.BOOLEAN))
+assign_support.add((PT.STRING, PT.STRING))
+assign_support.add((PT.CHAR, PT.CHAR))
+assign_support.add((PT.STRING, PT.CHAR))
 
 MAX_BYTE_VALUE : Final = 2**8
 MAX_WORD_VALUE : Final = 2**16
@@ -127,10 +158,9 @@ def cast_types_by_operator(type_1, type_2, oper):
         return base_type_upcast[type1, oper]
 
 def main():
-    t1 = PT.INTEGER
-    t2 = PT.INTEGER
-    res = base_type_upcast[t1, t2, OP.PLUS]
-    i = 43
+    t1 = PT.BOOLEAN
+    t2 = PT.REAL
+    print((t1, t2) in assign_support)
 
 if __name__ == '__main__':
     main()

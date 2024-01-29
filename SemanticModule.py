@@ -17,53 +17,12 @@ class Variable:
         self.identifier = identifier
         self.type = _type
         self.IS_IMMUTABLE = is_immutable
-    
-    def to_node_variable(self):
-        node = NodeVariable()
-        node.identifier = self.identifier
-        node.type = self.type
-        return node
 
-    @staticmethod
-    def to_variable(node : NodeVariable):
-        variable = Variable()
-        variable.identifier = node.identifier
-        variable.type = node.type
-        return variable
-
-class ArrayVariable(Variable):
-    def __init__(self, 
-                 identifier = '',
-                 _type = PrimitiveType.UNDEFINED,
-                 left_bound = None,
-                 right_bound = None):
-        super().__init__(identifier, _type)
-        self.left_bound = left_bound
-        self.right_bound = right_bound
-
-    @staticmethod
-    def to_variable(node : NodeArrayType):
-        variable = Variable()
-        variable.identifier = node.identifier
-        variable.type = node.type
-        variable.left_bound = node.left_bound
-        variable.right_bound = node.right_bound
-        return variable
+    def __str__(self):
+        return self.identifier
 
 class TypeVariable(Variable):
-    
-    def  to_node_variable(self):
-        node = NodeType()
-        node.identifier = self.identifier
-        node.type = self.type
-        return node
-
-    @staticmethod
-    def to_variable(node : NodeType):
-        variable = TypeVariable()
-        variable.identifier = node.identifier
-        variable.type = node.type
-        return variable 
+    pass
 
 class SubroutineVariable(Variable):
     def __init__(self, 
@@ -81,45 +40,38 @@ class SemanticModule:
     def __raise_exception(self, message):
         raise AttributeError(f'Semantic Module error: {message}')
 
-    def __add_to_scope(self, full_name, variable : Variable):
+    # Convert scope and identifier to key
+    def __convert_to_name(self, scope, identifier):
+        return f'{".".join(scope)}.{identifier}' if len(scope) != 0 else identifier
+
+    # Add variable or Type to scope
+    def __add_to_scope(self, scope, identifier, variable : Variable):
+        full_name = self.__convert_to_name(scope, identifier)
         if full_name in self.__scope_table:
-            self.__raise_exception(f'Identifier {full_name} is already declared')
+            self.__raise_exception(f'Try to redefine identifier {name} is same scope .{".".join(scope)}')
         self.__scope_table[full_name] = variable
 
-    def add_variable(self, scope, identifier, _type):
-        full_name = f'{".".join(scope)}.{identifier}'
-        variable = Variable(identifier, _type)
-        self.__add_to_scope(full_name, variable)
+    def add_variable(self, scope, identifier, _type, constant = False):
+        variable = Variable(identifier, _type, constant)
+        self.__add_to_scope(scope, identifier, variable)
 
     def add_type(self, scope, identifier, original_type : NodeType):
-        full_name = f'{".".join(scope)}.{identifier}'
         variable = TypeVariable(identifier, original_type)
-        self.__add_to_scope(full_name, variable)
-
-    def add_const(self, scope, identifier, _type):
-        full_name = f'{".".join(scope)}.{identifier}'
-        variable = Variable(identifier, _type, True)
-        self.__add_to_scope(full_name, variable)
+        self.__add_to_scope(scope, identifier, variable)
 
     def add_subroutine(self, scope, identifier, _type, formal_params):
-        full_name = f'{".".join(scope)}.{identifier}'
         variable = SubroutineVariable(identifier, _type, formal_params)
-        self.__add_to_scope(full_name, variable)
-
-    def analyze_type(self, expression):
-        return PrimitiveType.INTEGER
+        self.__add_to_scope(scope, identifier, variable)
 
     def __get_object(self, scope, identifier, prefered_object = None):
         local_scope = scope.copy()
         scope_len_counter = len(scope)
         while scope_len_counter >= 0:
-            full_name = f'{".".join(local_scope)}.{identifier}'
-            if prefered_object is None:
-                declarations = list(filter(lambda pair: pair[0] == full_name, self.__scope_table.items()))
-            else:
-                declarations = list(filter(lambda pair: pair[0] == full_name and isinstance(pair[1], prefered_object), self.__scope_table.items()))
-            if len(declarations) == 1:
-                return declarations[0][1]
+            full_name = self.__convert_to_name(local_scope, identifier)
+            if full_name in self.__scope_table:
+                object = self.__scope_table[full_name]
+                if (prefered_object is None) or (isinstance(object, prefered_object)):
+                    return object
             if len(local_scope) > 0:
                 local_scope.pop()
             scope_len_counter -= 1
@@ -130,18 +82,12 @@ class SemanticModule:
 
     def get_variable(self, scope, variable_name):
         return self.__get_object(scope, variable_name, Variable)
-    
-    def get_array(self, scope, array_name):
-        return self.__get_object(scope, array_name, Variable)
-
-    def get_subroutine(self, scope, subroutine_name):
-        return self.__get_object(scope, subroutine_name, SubroutineVariable)
 
     def return_value_type(self, value):
         return semantic_tools.get_value_type(value)
 
     def check_subroutine_call(self, scope, subroutine_name, input_params):
-        subroutine = self.get_subroutine(scope, subroutine_name)
+        subroutine = self.get_variable(scope, subroutine_name)
         if not isinstance(subroutine, SubroutineVariable):
             self.__raise_exception(f'Identifier {subroutine.identifier} is not callable')
         formal_params = subroutine.formal_params.params
@@ -155,35 +101,32 @@ class SemanticModule:
                 call_param = self.get_variable(scope, call_param.identifier)
             formal_type = self.predict_condition_type(formal_param, scope)
             call_type = self.predict_condition_type(call_param, scope)
-            # TODO Аналогично с плюсом
-            if (formal_type, call_type, Operator.PLUS) not in semantic_tools.base_type_upcast:
+            if (formal_type, call_type) not in semantic_tools.assign_support:
                 self.__raise_exception(f'TypeAttribute error: Subroutine {subroutine.identifier} expect {formal_type} in {index}, got {call_type.value}')
         return True
 
-    def check_array_access(self, scope, array_name, param):
-        array = self.get_array(scope, array_name)
-        array_type = array.type
-        while not isinstance(array_type, NodeArrayType):
-            try:
-                array_type = array_type.type
-            except:
-                self.__raise_exception(f'Identifier {array_name} is not array')
-        left_bound = array_type.left_bound
-        right_bound = array_type.right_bound
-        if len(param.params) != 1:
-            self.__raise_exception(f'Array {array.identifier} call expect 1 param, got {len(param)}')
-        if isinstance(param.params[0], NodeVariable):
-            param_type = self.get_variable(scope, param.params[0].identifier).type
-        else:
-            param_type = param.params[0].type
-        if not PrimitiveType.is_type_integer(param_type):
-            self.__raise_exception(f'Хз что тут написать, однако параметр должен быть исчесляемый у массивов')
-        if isinstance(param.params[0], NodeValue):
-            left_bound = int(left_bound.value)
-            right_bound = int(right_bound.value)
-            param_value = int(param.params[0].value)
-            if not left_bound < param_value < right_bound:
-                self.__raise_exception(f'Array {array.identifier} index out of bound')
+    def check_array_access(self, scope, variable_name, params):
+        params = params.params
+        variable = self.get_variable(scope, variable_name)
+        variable_type = variable.type
+        while isinstance(variable_type, Variable):
+            variable_type = variable_type.type
+        if not isinstance(variable_type, NodeArrayType):
+            self.__raise_exception(f'Identifier {variable_name} is not callable')
+        ranges = variable_type.array_ranges
+        if len(ranges) != len(params):
+            self.__raise_exception(f'{variable.identifier} call expect {len(ranges)} params, got {len(params)}')
+        for index in range(0, len(ranges)):
+            param = params[index]
+            if isinstance(param, NodeVariable):
+                param = self.get_variable(scope, param.identifier)
+            if not PrimitiveType.is_type_integer(param.type):
+                self.__raise_exception(f'Хз что тут написать, однако параметр должен быть исчесляемый у массивов')
+            if isinstance(param, NodeValue):
+                left_bound = ranges[index].left_bound.value
+                right_bound = ranges[index].right_bound.value
+                if not int(left_bound) <= int(param.value) <= int(right_bound):
+                    self.__raise_exception(f'Array {variable.identifier} index out of bound [{left_bound}..{right_bound}]')
         return True
 
     def check_assign(self, scope, variable_name, condition):
@@ -192,8 +135,7 @@ class SemanticModule:
         while not PrimitiveType.__contains__(variable_type):
             variable_type = variable_type.type
         condition_type = self.predict_condition_type(condition, scope)
-        # TODO убрать костыль с Operator.PLUS
-        if (variable_type, condition_type, Operator.PLUS) not in semantic_tools.base_type_upcast:
+        if (variable_type, condition_type) not in semantic_tools.assign_support:
             self.__raise_exception(f'Incompatible types: got "{condition_type.value}" expected "{variable_type.value}"')
         return True
 

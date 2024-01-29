@@ -104,10 +104,8 @@ class Parser:
             raise Error('Not implement Variable assign')
         for identifier in identifiers:
             self.__semantic_module.add_variable(self.current_scope, identifier, _type)
-        if isinstance(_type, NodeType):
-            _type = _type.identifier
-        elif isinstance(_type, PrimitiveType):
-            _type = _type.value
+        if not isinstance(_type, NodeArrayType):
+            _type = str(_type)
         variables = [NodeVariableDeclaration(identifier, _type) for identifier in identifiers]
         # Add declaration to scope
         return variables
@@ -118,13 +116,13 @@ class Parser:
         self.__expect('IDENTIFIER')
         node.identifier = self.__pop_value()
         self.__expect_and_move('EQUALITY')
-        node.value = self.__parse_condition()
-        node.type = self.__semantic_module.predict_condition_type(node.value, self.scope)
+        node.expression = self.__parse_condition()
+        node.type = self.__semantic_module.predict_condition_type(node.expression, self.current_scope)
         if isinstance(node.type, NodeType):
             node.type = node.type.identifier
         else:
             node.type = node.type.value
-        self.__semantic_module.add_const(self.current_scope, node.identifier, node)
+        self.__semantic_module.add_variable(self.current_scope, node.identifier, node, True)
         return node
 
     # Parsing TYPE declaration
@@ -135,10 +133,8 @@ class Parser:
         self.__expect_and_move('EQUALITY')
         node.type = self.__parse_type()
         self.__semantic_module.add_type(self.current_scope, node.identifier, node.type)
-        if isinstance(node.type, NodeType):
-            node.type = node.type.identifier
-        elif isinstance(node.type, PrimitiveType):
-            node.type = node.type.value
+        if not isinstance(node.type, NodeArrayType):
+            node.type = str(node.type)
         return node
 
     def __parse_SUBROUTINE(self):
@@ -156,10 +152,8 @@ class Parser:
         else:
             node.type = PrimitiveType.UNDEFINED
         self.__semantic_module.add_subroutine(self.current_scope[:-1], node.identifier, node.type, node.formal_params)
-        if isinstance(node.type, NodeType):
-            node.type = self.node.identifier
-        else:
-            node.type = node.type.value
+        if not isinstance(node.type, NodeArrayType):
+            node.type = str(node.type)
         self.__expect_and_move('SEMICOLON')
         if self.__check('FORWARD'):
             self.__next_token()
@@ -197,11 +191,16 @@ class Parser:
     def __parse_ARRAY_TYPE(self):
         node = NodeArrayType()
         self.__expect_and_move('LSBR')
-        node.left_bound = self.__parse_factor()
-        self.__expect_and_move('DOT')
-        self.__expect_and_move('DOT')
-        node.right_bound = self.__parse_factor()
-        self.__expect_and_move('RSBR')
+        while not self.__check('RSBR'):
+            array_range = NodeArrayRange()
+            array_range.left_bound = self.__parse_factor()
+            self.__expect_and_move('DOT')
+            self.__expect_and_move('DOT')
+            array_range.right_bound = self.__parse_factor()
+            if self.__check('COMMA'):
+                self.__next_token()
+            node.append(array_range)            
+        self.__next_token()
         self.__expect_and_move('OF')
         node.type = self.__parse_type()
         return node
@@ -277,11 +276,10 @@ class Parser:
                 case 'ASSIGN':
                     self.__next_token()
                     right = self.__parse_condition()
-                    # self.__semantic_module.check_assign(left, right)
                     variable = left
-                    while not isinstance(left, NodeVariable):
-                        left = left.left
-                    self.__semantic_module.check_assign(self.current_scope, left.identifier, right)
+                    while not isinstance(variable, NodeVariable):
+                        variable = variable.left
+                    self.__semantic_module.check_assign(self.current_scope, variable.identifier, right)
                     left = NodeBinaryOperator(left, right, Operator.ASSIGN)
                 case 'LPAREN':
                     self.__next_token()

@@ -49,6 +49,9 @@ class PrimitiveType(StrEnum):
             case _: member.operators = ()
         return member
 
+    def __str__(self):
+        return self.value
+
     def support_operation(self, operation_type):
         return operation_type in self.operators
 
@@ -81,8 +84,12 @@ class PrimitiveType(StrEnum):
         return type in [cls.BYTE, cls.WORD, cls.LONGWORD, cls.UINT64, cls.SHORTINT, cls.SMALLINT, cls.INTEGER, cls.INT64]
 
     @classmethod
-    def get_all_integer_integer_types(cls):
+    def get_all_integer_types(cls):
         return [cls.BYTE, cls.WORD, cls.LONGWORD, cls.UINT64, cls.SHORTINT, cls.SMALLINT, cls.INTEGER, cls.INT64]
+
+    @classmethod
+    def get_float_types(cls):
+        return [cls.SINGLE, cls.REAL, cls.DOUBLE, cls.SINGLE]
 
 class NodeStatementPart(Node):
     def __init__(self, statements = list()):
@@ -165,23 +172,31 @@ class NodeSubroutine(Node):
         self.statement_part = statement_part
         self.is_forward_declaration = is_forward_declaration
 
-# Класс для объявления одномерного массива
+# Класс для объявления границ массива
+class NodeArrayRange(Node):
+    def __init__(self,
+                 left_bound = NodeValue(0, PrimitiveType.BYTE),
+                 right_bound = NodeValue(0, PrimitiveType.BYTE)):
+        self.left_bound = left_bound
+        self.right_bound = right_bound
 class NodeArrayType(Node):
     def __init__(self,
                  identifier = '',
-                 left_bound = NodeValue(0, PrimitiveType.BYTE), 
-                 right_bound = NodeValue(0, PrimitiveType.BYTE), 
+                 array_ranges = list(), 
                  _type = None):
         self.identifier = identifier
-        self.left_bound = left_bound
-        self.right_bound = right_bound
+        self.array_ranges = array_ranges
         self.type = _type
+    def append(self, range : NodeArrayRange):
+        self.array_ranges.append(range)
 
 # Класс для объявления типов (Нужен только для возврата из семантики)
 class NodeType(Node):
     def __init__(self, identifier = None, _type = None):
         self.identifier = identifier
         self.type = _type
+    def __str__(self):
+        return self.identifier
 
 # Класс для объявления переменной
 class NodeVariable(Node):
