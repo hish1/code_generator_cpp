@@ -189,6 +189,8 @@ class NodeArrayType(Node):
         self.type = _type
     def append(self, range : NodeArrayRange):
         self.array_ranges.append(range)
+    def __str__(self):
+        return hex(id(self))
 
 # Класс для объявления типов (Нужен только для возврата из семантики)
 class NodeType(Node):

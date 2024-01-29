@@ -118,11 +118,9 @@ class Parser:
         self.__expect_and_move('EQUALITY')
         node.expression = self.__parse_condition()
         node.type = self.__semantic_module.predict_condition_type(node.expression, self.current_scope)
-        if isinstance(node.type, NodeType):
-            node.type = node.type.identifier
-        else:
-            node.type = node.type.value
-        self.__semantic_module.add_variable(self.current_scope, node.identifier, node, True)
+        self.__semantic_module.add_variable(self.current_scope, node.identifier, node.type, True)
+        if not isinstance(node.type, NodeArrayType):
+            node.type = str(node.type)
         return node
 
     # Parsing TYPE declaration
@@ -170,6 +168,8 @@ class Parser:
         node = NodeSubroutineFormalParams(list())
         while not self.__check('RPAREN'):
             node.extend(self.__parse_VAR_statement())
+            if self.__check('COMMA'):
+                self.__expect_and_move('RPAREN') # TODO убрать костыль
             if self.__check('SEMICOLON'):
                 self.__next_token()
         return node
@@ -189,7 +189,7 @@ class Parser:
             return self.__semantic_module.get_type(self.current_scope, custom_type)
     
     def __parse_ARRAY_TYPE(self):
-        node = NodeArrayType()
+        node = NodeArrayType(array_ranges = list())
         self.__expect_and_move('LSBR')
         while not self.__check('RSBR'):
             array_range = NodeArrayRange()

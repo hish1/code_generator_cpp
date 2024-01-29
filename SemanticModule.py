@@ -101,8 +101,8 @@ class SemanticModule:
                 call_param = self.get_variable(scope, call_param.identifier)
             formal_type = self.predict_condition_type(formal_param, scope)
             call_type = self.predict_condition_type(call_param, scope)
-            if (formal_type, call_type) not in semantic_tools.assign_support:
-                self.__raise_exception(f'TypeAttribute error: Subroutine {subroutine.identifier} expect {formal_type} in {index}, got {call_type.value}')
+            if not self.check_type_compatibility(formal_type, call_type):
+                self.__raise_exception(f'TypeAttribute error: Subroutine {subroutine.identifier} expect {str(formal_type)} in {index}, got {str(call_type)}')
         return True
 
     def check_array_access(self, scope, variable_name, params):
@@ -129,17 +129,37 @@ class SemanticModule:
                     self.__raise_exception(f'Array {variable.identifier} index out of bound [{left_bound}..{right_bound}]')
         return True
 
+    def check_type_compatibility(self, type_1, type_2):
+        while isinstance(type_1, TypeVariable):
+            type_1 = type_1.type
+        while isinstance(type_2, TypeVariable):
+            type_2 = type_2.type
+        if not isinstance(type_1, PrimitiveType) and not isinstance(type_2, PrimitiveType):
+            result = type_1 == type_2
+        elif isinstance(type_1, NodeArrayType):
+            result = (type_1.type, type_2) in semantic_tools.assign_support
+        elif isinstance(type_2, NodeArrayType):
+            result = (type_2.type, type_1) in semantic_tools.assign_support
+        else:
+            result = (type_1, type_2) in semantic_tools.assign_support
+        return result
+
     def check_assign(self, scope, variable_name, condition):
         variable = self.get_variable(scope, variable_name)
         variable_type = variable.type
-        while not PrimitiveType.__contains__(variable_type):
-            variable_type = variable_type.type
         condition_type = self.predict_condition_type(condition, scope)
-        if (variable_type, condition_type) not in semantic_tools.assign_support:
-            self.__raise_exception(f'Incompatible types: got "{condition_type.value}" expected "{variable_type.value}"')
+        if not self.check_type_compatibility(variable_type, condition_type):
+            self.__raise_exception(f'Identifier type {variable_type} is not compatibility with type {condition_type}')
         return True
 
+    def __get_primitive_type(self, type):
+        while not PrimitiveType.__contains__(type):
+            type = type.type
+        return type
+
     def predict_condition_type(self, condition, scope = None):
+        if 'type' in condition.__dict__:
+            return condition.type
         order_result = self.post_order_condition(condition, scope)
         predict_type = self.convolute_type_operator_vector(order_result)
         return predict_type
@@ -170,10 +190,10 @@ class SemanticModule:
                 visited.append(top)
                 if isinstance(top, NodeVariable):
                     variable = self.__get_object(scope, top.identifier)
-                    result.append(variable.type)
+                    result.append(self.__get_primitive_type(variable.type))
                 else:
                     if 'type' in top.__dict__:
-                        result.append(top.type)
+                        result.append(self.__get_primitive_type(top.type))
         return result
 
     def convolute_type_operator_vector(self, post_order_result):
@@ -192,7 +212,7 @@ class SemanticModule:
                     first = post_order_result[index]
                     if post_order_result[index + 1] == Operator.UNARY_MINUS or post_order_result[index + 1] == Operator.UNARY_PLUS:
                         operator = post_order_result[index + 1]
-                        temp.append(cast_types_by_operator(first, None, operator))
+                        temp.append(semantic_tools.cast_types_by_operator(first, None, operator))
                         index += 2
                     else:
                         second = post_order_result[index + 1]
@@ -202,4 +222,7 @@ class SemanticModule:
                         index += 3
             post_order_result = temp
         return post_order_result[0]
+
+if __name__ == '__main__':
+    pass
  

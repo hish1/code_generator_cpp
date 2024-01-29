@@ -56,7 +56,7 @@ base_type_upcast[(PT.DECIMAL, PT.DECIMAL, OP.DIVIDE)] = PT.DECIMAL
 
 for type in PT.get_all_integer_types():
     if PT.is_type_unsigned_integer(type):
-        base_type_upcast[(type, OP.UNARY_MINUS)] = PT.get_signed_int_by_weight(type.byte_weight)
+        base_type_upcast[(type, OP.UNARY_MINUS)] = PT.get_signed_int_by_weight(type.byte_weight * 2)
     else:
         base_type_upcast[(type, OP.UNARY_MINUS)] = type
     base_type_upcast[(type, OP.PLUS)] = type
@@ -155,12 +155,13 @@ def cast_types_by_operator(type_1, type_2, oper):
     if type_2 is not None:
         return base_type_upcast[type_1, type_2, oper]
     else:
-        return base_type_upcast[type1, oper]
+        return base_type_upcast[type_1, oper]
 
 def main():
-    t1 = PT.BOOLEAN
-    t2 = PT.REAL
-    print((t1, t2) in assign_support)
+    t1 = PT.WORD
+    # t2 = PT.REAL
+    # print((t1, t2) in assign_support)
+    print(base_type_upcast[t1, OP.MINUS])
 
 if __name__ == '__main__':
     main()
