@@ -8,7 +8,7 @@ class Parser:
         self.lexer = lexer
         self.current_token = lexer.get_next_token()
         self.current_scope = list()
-        self.__semantic_module = SemanticModule()
+        self.__semantic_module = None
 
     def __next_token(self):
         self.current_token = self.lexer.get_next_token()
@@ -44,6 +44,9 @@ class Parser:
 
     def __raise_exception(self, message):
         raise AttributeError(f'Parse error: {message}')
+
+    def set_semantic_module(self, semantic_module):
+        self.__semantic_module = semantic_module
     
     def parse(self):
         if not self.__check('EOF'):

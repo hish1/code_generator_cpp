@@ -1,0 +1,44 @@
+NodeProgram
+|+-identifier: V1
+|+-global_declaration: NodeDeclarationPart
+|   |+-NodeConstantDeclaration
+|   |   |+-identifier: d
+|   |   |+-type: REAL
+|   |   |+-expression: NodeBinaryOperator
+|   |   |   |+-left: NodeBinaryOperator
+|   |   |   |   |+-left: NodeValue
+|   |   |   |   |   |+-value: 254
+|   |   |   |   |   |+-type: BYTE
+|   |   |   |   |+-right: NodeValue
+|   |   |   |   |   |+-value: 128
+|   |   |   |   |   |+-type: BYTE
+|   |   |   |   |+-operation_type: PLUS
+|   |   |   |+-right: NodeValue
+|   |   |   |   |+-value: 2
+|   |   |   |   |+-type: BYTE
+|   |   |   |+-operation_type: DIVIDE
+|   |+-NodeTypeDeclaration
+|   |   |+-identifier: myInt
+|   |   |+-type: REAL
+|   |+-NodeVariableDeclaration
+|   |   |+-identifier: i
+|   |   |+-type: myInt
+|+-statement_part: NodeStatementPart
+|   |+-NodeBinaryOperator
+|   |   |+-left: NodeVariable
+|   |   |   |+-identifier: i
+|   |   |+-right: NodeBinaryOperator
+|   |   |   |+-left: NodeUnaryOperator
+|   |   |   |   |+-left: NodeBinaryOperator
+|   |   |   |   |   |+-left: NodeVariable
+|   |   |   |   |   |   |+-identifier: d
+|   |   |   |   |   |+-right: NodeValue
+|   |   |   |   |   |   |+-value: 1
+|   |   |   |   |   |   |+-type: BYTE
+|   |   |   |   |   |+-operation_type: PLUS
+|   |   |   |   |+-operation_type: UNARY_MINUS
+|   |   |   |+-right: NodeValue
+|   |   |   |   |+-value: 3
+|   |   |   |   |+-type: BYTE
+|   |   |   |+-operation_type: PLUS
+|   |   |+-operation_type: ASSIGN

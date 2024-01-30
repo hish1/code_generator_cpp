@@ -47,6 +47,8 @@ for type1 in PT.get_float_types():
             base_type_upcast[(type1, type2, OP.MINUS)] = PT.REAL
             base_type_upcast[(type1, type2, OP.MULTIPLY)] = PT.REAL
             base_type_upcast[(type1, type2, OP.DIVIDE)] = PT.REAL
+            base_type_upcast[(type1, OP.UNARY_MINUS)] = PT.REAL
+            base_type_upcast[(type1, OP.UNARY_PLUS)] = PT.REAL
             assign_support.add((type1, type2))
 
 base_type_upcast[(PT.DECIMAL, PT.DECIMAL, OP.PLUS)] = PT.DECIMAL
