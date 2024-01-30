@@ -8,7 +8,6 @@ class Parser:
     def __init__(self, lexer):
         self.lexer = lexer
         self.current_token = lexer.next_token()
-        self._scope_type_dict = dict() 
         self.current_scope = list()
         self.__semantic_module = SemanticModule()
 
@@ -256,25 +255,25 @@ class Parser:
 
     def __parse_UNARY_OPERATOR(self):
         operator = Operator[self.__pop_token()]
-        condition = self.__parse_CONDITION()
+        factor = self.__parse_FACTOR()
         match operator:
             case Operator.PLUS:
-                self.__semantic_module.check_type_operation_support(condition.type, Operator.UNARY_PLUS)
-                node = condition
+                self.__semantic_module.check_type_operation_support(factor.type, Operator.UNARY_PLUS)
+                node = factor
             case Operator.MINUS:
-                if isinstance(condition, NodeValue):
-                    self.__semantic_module.check_type_operation_support(condition.type, Operator.UNARY_MINUS)
-                    condition.value = '-' + condition.value
-                    condition.type = self.__semantic_module.return_value_type(condition.value)
-                    node = condition
+                if isinstance(factor, NodeValue):
+                    self.__semantic_module.check_type_operation_support(factor.type, Operator.UNARY_MINUS)
+                    factor.value = '-' + factor.value
+                    factor.type = self.__semantic_module.return_value_type(factor.value)
+                    node = factor
                 else:
-                    node = NodeUnaryOperator(condition, Operator.UNARY_MINUS)
+                    node = NodeUnaryOperator(factor, Operator.UNARY_MINUS)
             case Operator.NOT:
-                if isinstance(condition, NodeValue):
-                    new_value = not self.__semantic_module.convert_to_bool(condition.value)
+                if isinstance(factor, NodeValue):
+                    new_value = not self.__semantic_module.convert_to_bool(factor.value)
                     node = NodeValue(str(new_value), PrimitiveType.BOOLEAN)
                 else:
-                    node = NodeUnaryOperator(condition, Operator.NOT)
+                    node = NodeUnaryOperator(factor, Operator.NOT)
         return node
 
     # Parinsg variable or Subroutine/array call
@@ -362,7 +361,7 @@ class Parser:
             case 'REPEAT':
                 self.__next_token()
                 node = self.__parse_REPEAT_STATEMENT()
-            case 'IDENTIFIER':
+            case _: 
                 node = self.__parse_IDENTIFIER_STATEMENT()
         return node
 
@@ -372,6 +371,7 @@ class Parser:
         self.__expect_and_move('THEN')
         node.then_statement_part = self.__parse_STATEMENT_BLOCK()
         if self.__check('ELSE'):
+            self.__next_token()
             node.else_statement_part = self.__parse_STATEMENT_BLOCK()
         return node
 

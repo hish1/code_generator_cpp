@@ -6,7 +6,11 @@ from SupportClasses import NodeVariable, NodeSubroutine, NodeCallParams, NodeArr
 from SupportClasses import NodeVariableDeclaration, NodeTypeDeclaration, NodeConstantDeclaration 
 from SupportClasses import NodeBinaryOperator, NodeUnaryOperator
 from SupportClasses import Operator
+from enum import Enum
 import SemanticTools as semantic_tools
+
+class UseStateEnum(Enum):
+    DECLARED = 0; LINKED = 1; USED = 2
 
 # Класс для хранения объявленных переменных в семантике
 class Variable:
@@ -17,6 +21,7 @@ class Variable:
         self.identifier = identifier
         self.type = _type
         self.IS_IMMUTABLE = is_immutable
+        self.state = UseStateEnum.DECLARED
 
     def __str__(self):
         return self.identifier
@@ -28,7 +33,8 @@ class SubroutineVariable(Variable):
     def __init__(self, 
                  identifier = '',
                  _type = PrimitiveType.UNDEFINED,
-                 formal_params = None):
+                 formal_params = None,
+                 state : UseStateEnum = UseStateEnum.DECLARED):
         super().__init__(identifier, _type)
         self.formal_params = formal_params
 
@@ -41,36 +47,33 @@ class SemanticModule:
         raise AttributeError(f'Semantic Module error: {message}')
 
     # Convert scope and identifier to key
-    def __convert_to_name(self, scope, identifier):
+    def convert_to_name(self, scope, identifier):
         return f'{".".join(scope)}.{identifier}' if len(scope) != 0 else identifier
 
     # Add variable or Type to scope
     def __add_to_scope(self, scope, identifier, variable : Variable):
-        full_name = self.__convert_to_name(scope, identifier)
+        full_name = self.convert_to_name(scope, identifier)
         if full_name in self.__scope_table:
             self.__raise_exception(f'Try to redefine identifier {name} is same scope .{".".join(scope)}')
+        type_iter = variable.type
+        while isinstance(type_iter, TypeVariable):
+            type_iter.state = UseStateEnum.LINKED
+            type_iter = type_iter.type
         self.__scope_table[full_name] = variable
-
-    def add_variable(self, scope, identifier, _type, constant = False):
-        variable = Variable(identifier, _type, constant)
-        self.__add_to_scope(scope, identifier, variable)
-
-    def add_type(self, scope, identifier, original_type : NodeType):
-        variable = TypeVariable(identifier, original_type)
-        self.__add_to_scope(scope, identifier, variable)
-
-    def add_subroutine(self, scope, identifier, _type, formal_params):
-        variable = SubroutineVariable(identifier, _type, formal_params)
-        self.__add_to_scope(scope, identifier, variable)
 
     def __get_object(self, scope, identifier, prefered_object = None):
         local_scope = scope.copy()
         scope_len_counter = len(scope)
         while scope_len_counter >= 0:
-            full_name = self.__convert_to_name(local_scope, identifier)
+            full_name = self.convert_to_name(local_scope, identifier)
             if full_name in self.__scope_table:
                 object = self.__scope_table[full_name]
                 if (prefered_object is None) or (isinstance(object, prefered_object)):
+                    object.state = UseStateEnum.USED
+                    type_iter = object.type
+                    while isinstance(type_iter, TypeVariable):
+                        type_iter.state = UseStateEnum.USED
+                        type_iter = type_iter.type
                     return object
             if len(local_scope) > 0:
                 local_scope.pop()
@@ -85,6 +88,22 @@ class SemanticModule:
 
     def return_value_type(self, value):
         return semantic_tools.get_value_type(value)
+
+    def add_variable(self, scope, identifier, _type, constant = False):
+        variable = Variable(identifier, _type, constant)
+        self.__add_to_scope(scope, identifier, variable)
+
+    def add_type(self, scope, identifier, original_type : NodeType):
+        variable = TypeVariable(identifier, original_type)
+        self.__add_to_scope(scope, identifier, variable)
+
+    def add_subroutine(self, scope, identifier, _type, formal_params):
+        variable = SubroutineVariable(identifier, _type, formal_params)
+        self.__add_to_scope(scope, identifier, variable)
+
+    def get_unused_variable_names(self):
+        not_used = filter(lambda pair: pair[1].state != UseStateEnum.USED, self.__scope_table.items())
+        return list(pair[0] for pair in not_used)
 
     def check_type_operation_support(self, type, oper : Operator):
         if not oper in type.operators:
@@ -150,6 +169,8 @@ class SemanticModule:
 
     def check_assign(self, scope, variable_name, condition):
         variable = self.get_variable(scope, variable_name)
+        if variable.IS_IMMUTABLE:
+            self.__raise_exception(f'Try to change value of constant {variable.identifier}')
         variable_type = variable.type
         condition_type = self.predict_condition_type(condition, scope)
         if not self.check_type_compatibility(variable_type, condition_type):
@@ -205,33 +226,33 @@ class SemanticModule:
 
     def __convolute_type_operator_vector(self, post_order_result):
         while len(post_order_result) != 1:
-            temp = []
             index = 0
             while len(post_order_result) > index:
-                if len(post_order_result) <= index + 1:
-                    while len(post_order_result) > index:
-                        temp.append(post_order_result[index])
-                        index += 1
-                elif isinstance(post_order_result[index], Operator):
-                    temp.append(post_order_result[index])
+                if isinstance(post_order_result[index], Operator):
                     index += 1  
                 else:
                     first = post_order_result[index]
                     if post_order_result[index + 1] == Operator.UNARY_MINUS or post_order_result[index + 1] == Operator.UNARY_PLUS:
                         operator = post_order_result[index + 1]
                         self.check_type_operation_support(first, operator)
-                        temp.append(semantic_tools.cast_types_by_operator(first, None, operator))
+                        post_order_result[0] = semantic_tools.cast_types_by_operator(first, None, operator)
+                        post_order_result.pop(1)
                         index += 2
                     else:
                         second = post_order_result[index + 1]
                         operator = post_order_result[index + 2]
                         self.check_type_operation_support(first, operator)
                         self.check_type_operation_support(second, operator)
-                        temp.append(semantic_tools.cast_types_by_operator(first, second, operator))
+                        post_order_result[0] = semantic_tools.cast_types_by_operator(first, second, operator)
+                        post_order_result.pop(1)
+                        post_order_result.pop(1)
                         index += 3
-            post_order_result = temp
         return post_order_result[0]
 
 if __name__ == '__main__':
-    pass
+    t1 = NodeValue('254', PrimitiveType.BYTE)
+    t2 = NodeValue('124', PrimitiveType.BYTE)
+    node = NodeBinaryOperator(t1, t2, Operator.DIVIDE)
+    semantic_module = SemanticModule()
+    print(semantic_module.predict_condition_type(node))
  

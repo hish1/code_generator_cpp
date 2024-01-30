@@ -1,20 +1,69 @@
 NodeProgram
 |+-identifier: V1
 |+-global_declaration: NodeDeclarationPart
+|   |+-NodeConstantDeclaration
+|   |   |+-identifier: d
+|   |   |+-type: REAL
+|   |   |+-expression: NodeBinaryOperator
+|   |   |   |+-left: NodeBinaryOperator
+|   |   |   |   |+-left: NodeValue
+|   |   |   |   |   |+-value: 254
+|   |   |   |   |   |+-type: BYTE
+|   |   |   |   |+-right: NodeValue
+|   |   |   |   |   |+-value: 128
+|   |   |   |   |   |+-type: BYTE
+|   |   |   |   |+-operation_type: PLUS
+|   |   |   |+-right: NodeValue
+|   |   |   |   |+-value: 2
+|   |   |   |   |+-type: BYTE
+|   |   |   |+-operation_type: DIVIDE
+|   |+-NodeTypeDeclaration
+|   |   |+-identifier: myInt
+|   |   |+-type: INTEGER
 |   |+-NodeVariableDeclaration
 |   |   |+-identifier: i
-|   |   |+-type: INTEGER
+|   |   |+-type: myInt
 |   |+-NodeVariableDeclaration
 |   |   |+-identifier: b
-|   |   |+-type: INTEGER
+|   |   |+-type: myInt
 |   |+-NodeVariableDeclaration
 |   |   |+-identifier: flag
 |   |   |+-type: BOOLEAN
+|   |+-NodeSubroutine
+|   |   |+-identifier: test
+|   |   |+-subroutine_type: PROCEDURE
+|   |   |+-type: UNDEFINED
+|   |   |+-formal_params: NodeSubroutineFormalParams
+|   |   |+-declaration_part: NodeDeclarationPart
+|   |   |   |+-NodeVariableDeclaration
+|   |   |   |   |+-identifier: tt
+|   |   |   |   |+-type: myInt
+|   |   |+-statement_part: NodeStatementPart
+|   |   |   |+-NodeBinaryOperator
+|   |   |   |   |+-left: NodeVariable
+|   |   |   |   |   |+-identifier: tt
+|   |   |   |   |+-right: NodeValue
+|   |   |   |   |   |+-value: 25
+|   |   |   |   |   |+-type: BYTE
+|   |   |   |   |+-operation_type: ASSIGN
+|   |   |+-is_forward_declaration: False
 |+-statement_part: NodeStatementPart
 |   |+-NodeBinaryOperator
 |   |   |+-left: NodeVariable
 |   |   |   |+-identifier: i
-|   |   |+-right: NodeValue
-|   |   |   |+-value: -5
-|   |   |   |+-type: SHORTINT
+|   |   |+-right: NodeBinaryOperator
+|   |   |   |+-left: NodeUnaryOperator
+|   |   |   |   |+-left: NodeBinaryOperator
+|   |   |   |   |   |+-left: NodeValue
+|   |   |   |   |   |   |+-value: 15
+|   |   |   |   |   |   |+-type: BYTE
+|   |   |   |   |   |+-right: NodeValue
+|   |   |   |   |   |   |+-value: 1
+|   |   |   |   |   |   |+-type: BYTE
+|   |   |   |   |   |+-operation_type: PLUS
+|   |   |   |   |+-operation_type: UNARY_MINUS
+|   |   |   |+-right: NodeValue
+|   |   |   |   |+-value: 3
+|   |   |   |   |+-type: BYTE
+|   |   |   |+-operation_type: PLUS
 |   |   |+-operation_type: ASSIGN

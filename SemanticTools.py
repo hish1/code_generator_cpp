@@ -23,7 +23,7 @@ for type1 in PT.get_all_integer_types():
         base_type_upcast[(type1, type2, OP.PLUS)] = next_type
         base_type_upcast[(type1, type2, OP.MINUS)] = next_type
         base_type_upcast[(type1, type2, OP.MULTIPLY)] = next_type
-        base_type_upcast[(type1, type2, OP.DIVIDE)] = current_level_type
+        base_type_upcast[(type1, type2, OP.DIVIDE)] = PT.REAL
         base_type_upcast[(type1, type2, OP.DIV)] = current_level_type
         base_type_upcast[(type1, type2, OP.MOD)] = current_level_type
         assign_support.add((type1, type2))
@@ -140,7 +140,7 @@ def get_value_type(value):
     if is_value_integer(value):
         _type = get_integer_value_type(value)
     elif is_value_float(value):
-        _type = PT.FLOAT
+        _type = PT.REAL
     elif is_value_boolean(value):
         _type = PT.BOOLEAN
     elif is_value_char(value):
@@ -166,10 +166,8 @@ def conver_value_to_boolean(value):
         return bool(value)
 
 def main():
-    t1 = PT.WORD
-    # t2 = PT.REAL
-    # print((t1, t2) in assign_support)
-    print(base_type_upcast[t1, OP.MINUS])
+    test = str(254 / 128)
+    print(get_value_type(test))
 
 if __name__ == '__main__':
     main()
