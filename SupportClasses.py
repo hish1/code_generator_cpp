@@ -249,7 +249,7 @@ class NodeIfStatement(Node):
                  condition = None, 
                  then_statement_part = NodeStatementPart(), 
                  else_statement_part = NodeStatementPart()):
-        self._condition = condition
+        self.condition = condition
         self.then_statement_part = then_statement_part
         self.else_statement_part = else_statement_part 
       
