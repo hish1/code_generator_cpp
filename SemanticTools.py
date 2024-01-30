@@ -109,7 +109,7 @@ def is_value_float(value):
     return re.match(FLOAT_REGEX, value) != None
 
 def is_value_boolean(value):
-    return re.match(BOOLEAN_REGEX, value.lowercase())
+    return re.match(BOOLEAN_REGEX, value.lower())
 
 def is_value_char(value):
     return len(value) == 1
@@ -156,6 +156,14 @@ def cast_types_by_operator(type_1, type_2, oper):
         return base_type_upcast[type_1, type_2, oper]
     else:
         return base_type_upcast[type_1, oper]
+
+def conver_value_to_boolean(value):
+    if is_value_integer(value) or is_value_float(value):
+        return bool(float(value))
+    elif is_value_boolean(value):
+        return True if value.lower() == 'true' else False
+    else:
+        return bool(value)
 
 def main():
     t1 = PT.WORD

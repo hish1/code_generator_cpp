@@ -116,7 +116,7 @@ class Parser:
         self.__expect('IDENTIFIER')
         node.identifier = self.__pop_value()
         self.__expect_and_move('EQUALITY')
-        node.expression = self.__parse_condition()
+        node.expression = self.__parse_CONDITION()
         node.type = self.__semantic_module.predict_condition_type(node.expression, self.current_scope)
         self.__semantic_module.add_variable(self.current_scope, node.identifier, node.type, True)
         if not isinstance(node.type, NodeArrayType):
@@ -193,10 +193,10 @@ class Parser:
         self.__expect_and_move('LSBR')
         while not self.__check('RSBR'):
             array_range = NodeArrayRange()
-            array_range.left_bound = self.__parse_factor()
+            array_range.left_bound = self.__parse_FACTOR()
             self.__expect_and_move('DOT')
             self.__expect_and_move('DOT')
-            array_range.right_bound = self.__parse_factor()
+            array_range.right_bound = self.__parse_FACTOR()
             if self.__check('COMMA'):
                 self.__next_token()
             node.append(array_range)            
@@ -206,34 +206,34 @@ class Parser:
         return node
     
     # Parsing condition expression
-    def __parse_condition(self):
-        left = self.__parse_expression()
+    def __parse_CONDITION(self):
+        left = self.__parse_EXPRESSION()
         while self.__check_all(('EQUALITY', 'NONEQUALITY', 'GREATER', 'SMALLER')):
             operator = Operator(self.__pop_token())
-            right = self.__parse_expression()
+            right = self.__parse_EXPRESSION()
             left = NodeBinaryOperator(left, right, operator)
         return left
 
     # Prasing expression
-    def __parse_expression(self):
-        left = self.__parse_term()
+    def __parse_EXPRESSION(self):
+        left = self.__parse_TERM()
         while self.__check_all(('PLUS', 'MINUS', 'OR', 'XOR')):
             operator = Operator(self.__pop_token())
-            right = self.__parse_term()
+            right = self.__parse_TERM()
             left = NodeBinaryOperator(left, right, operator)
         return left
 
     # Parsing term
-    def __parse_term(self):
-        left = self.__parse_factor()
+    def __parse_TERM(self):
+        left = self.__parse_FACTOR()
         while self.__check_all(('MULTIPLY', 'DIVIDE','DIV', 'MOD', 'AND', 'SHL', 'SHR')):
             operator = Operator(self.__pop_token())
-            right = self.__parse_factor()
+            right = self.__parse_FACTOR()
             left = NodeBinaryOperator(left, right, operator)
         return left
 
     # Parsing factor
-    def __parse_factor(self):
+    def __parse_FACTOR(self):
         match self.current_token[0]:
             case 'NUMBER':
                 possible_number = self.__pop_value()
@@ -245,25 +245,37 @@ class Parser:
                 return self.__parse_STRING()
             case 'LPAREN':
                 self.__next_token()
-                condition = self.__parse_condition()
+                condition = self.__parse_CONDITION()
                 self.__expect_and_move('RPAREN')
                 return condition
-            case 'MINUS':
-                self.__next_token()
-                condition = self.__parse_condition()
-                if isinstance(condition, NodeValue):
-                    new_value = f'-{condition.value}'
-                    _type = self.__semantic_module.return_value_type(new_value)
-                    return NodeValue(new_value, _type)
-                else:
-                    return NodeUnaryOperator(condition, Operator.UNARY_MINUS)
-            case 'PLUS':
-                self.__next_token()
-                condition = self.__parse_condition()
-                return condition
+            case 'MINUS' | 'PLUS' | 'NOT':
+                return self.__parse_UNARY_OPERATOR()
             case _:
                 self.__expect('IDENTIFIER')
                 return self.__parse_IDENTIFIER_STATEMENT()
+
+    def __parse_UNARY_OPERATOR(self):
+        operator = Operator[self.__pop_token()]
+        condition = self.__parse_CONDITION()
+        match operator:
+            case Operator.PLUS:
+                self.__semantic_module.check_type_operation_support(condition.type, Operator.UNARY_PLUS)
+                node = condition
+            case Operator.MINUS:
+                if isinstance(condition, NodeValue):
+                    self.__semantic_module.check_type_operation_support(condition.type, Operator.UNARY_MINUS)
+                    condition.value = '-' + condition.value
+                    condition.type = self.__semantic_module.return_value_type(condition.value)
+                    node = condition
+                else:
+                    node = NodeUnaryOperator(condition, Operator.UNARY_MINUS)
+            case Operator.NOT:
+                if isinstance(condition, NodeValue):
+                    new_value = not self.__semantic_module.convert_to_bool(condition.value)
+                    node = NodeValue(str(new_value), PrimitiveType.BOOLEAN)
+                else:
+                    node = NodeUnaryOperator(condition, Operator.NOT)
+        return node
 
     # Parinsg variable or Subroutine/array call
     def __parse_IDENTIFIER_STATEMENT(self):    
@@ -275,7 +287,7 @@ class Parser:
             match self.current_token[0]:
                 case 'ASSIGN':
                     self.__next_token()
-                    right = self.__parse_condition()
+                    right = self.__parse_CONDITION()
                     variable = left
                     while not isinstance(variable, NodeVariable):
                         variable = variable.left
@@ -299,7 +311,7 @@ class Parser:
     def __parse_SUBROUTINE_CALL_PARAMS(self):
         node = NodeCallParams(list())
         while not self.__check('RPAREN'):
-            node.append(self.__parse_condition())
+            node.append(self.__parse_CONDITION())
             if self.__check('COMMA'):
                 self.__next_token()
         self.__next_token()
@@ -308,7 +320,7 @@ class Parser:
     def __parse_ARRAY_CALL(self):
         node = NodeCallParams(list())
         while not self.__check('RSBR'):
-            node.append(self.__parse_expression())
+            node.append(self.__parse_EXPRESSION())
             if self.__check('COMMA'):
                 self.__next_token()
         self.__next_token()
@@ -323,6 +335,8 @@ class Parser:
                 statement_block.append(self.__parse_STATEMENT())
                 if self.__check('SEMICOLON'):
                     self.__next_token()
+                else:
+                    self.__expect('END')
             self.__next_token()
         else:
             statement_block.append(self.__parse_STATEMENT())
@@ -338,7 +352,7 @@ class Parser:
                 node = self.__parse_IF_STATEMENT()
             case 'CASE':
                 self.__next_token()
-                pass
+                node = self.__parse_CASE_STATEMENT()
             case 'FOR':
                 self.__next_token()
                 node = self.__parse_FOR_STATEMENT()
@@ -354,11 +368,33 @@ class Parser:
 
     def __parse_IF_STATEMENT(self):
         node = NodeIfStatement()
-        node.condition = self.__parse_condition()
+        node.condition = self.__parse_CONDITION()
         self.__expect_and_move('THEN')
         node.then_statement_part = self.__parse_STATEMENT_BLOCK()
         if self.__check('ELSE'):
             node.else_statement_part = self.__parse_STATEMENT_BLOCK()
+        return node
+
+    def __parse_CASE_STATEMENT(self):
+        node = NodeSwitchStatement(None, list())
+        self.__expect('IDENTIFIER')
+        node.variable = NodeVariable(self.__pop_value())
+        self.__expect_and_move('OF')
+        while not self.__check('END'):
+            if self.__check('ELSE'):
+                self.__next_token()
+                node.default_block = self.__parse_STATEMENT_BLOCK()
+            else:
+                case_block = NodeCaseBlock(list(), None)
+                while not self.__check('COLON'):
+                    case_block.append_case(self.__parse_EXPRESSION())
+                    if self.__check('COMMA'):
+                        self.__next_token()
+                self.__next_token()
+                case_block.statement_part = self.__parse_STATEMENT_BLOCK()
+            self.__expect_and_move('SEMICOLON')
+            node.append(case_block)
+        self.__next_token()
         return node
 
     def __parse_FOR_STATEMENT(self):
@@ -368,18 +404,18 @@ class Parser:
         self.__semantic_module.get_variable(self.current_scope, node.variable.identifier)
         if self.__check('ASSIGN'):
             self.__next_token()
-            expression = self.__parse_expression()
+            expression = self.__parse_EXPRESSION()
             self.__semantic_module.check_assign(self.current_scope, node.variable.identifier, expression)
             node.initial_expression = expression
         self.__expect_and_move('TO')
-        node.end_expression = self.__parse_expression()
+        node.end_expression = self.__parse_EXPRESSION()
         self.__expect_and_move('DO')
         node.statement_part = self.__parse_STATEMENT_BLOCK()
         return node
 
     def __parse_WHILE_STATEMENT(self):
         node = NodeWhileStatement()
-        node.condition = self.__parse_condition()
+        node.condition = self.__parse_CONDITION()
         self.__expect_and_move('DO')
         node.statement_block = self.__parse_STATEMENT_BLOCK()
         return node       
@@ -390,7 +426,7 @@ class Parser:
             node.statement_part.append(self.__parse_STATEMENT())
             self.__expect_and_move('SEMICOLON')
         self.__next_token()
-        node.condition = self.__parse_condition()
+        node.condition = self.__parse_CONDITION()
         return node
             
 if __name__ == '__main__':

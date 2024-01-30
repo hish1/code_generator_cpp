@@ -86,6 +86,10 @@ class SemanticModule:
     def return_value_type(self, value):
         return semantic_tools.get_value_type(value)
 
+    def check_type_operation_support(self, type, oper : Operator):
+        if not oper in type.operators:
+            self.__raise_exception(f'Unsupported operator {str(oper)} for type {str(type)}')
+
     def check_subroutine_call(self, scope, subroutine_name, input_params):
         subroutine = self.get_variable(scope, subroutine_name)
         if not isinstance(subroutine, SubroutineVariable):
@@ -160,11 +164,14 @@ class SemanticModule:
     def predict_condition_type(self, condition, scope = None):
         if 'type' in condition.__dict__:
             return condition.type
-        order_result = self.post_order_condition(condition, scope)
-        predict_type = self.convolute_type_operator_vector(order_result)
+        order_result = self.__post_order_condition(condition, scope)
+        predict_type = self.__convolute_type_operator_vector(order_result)
         return predict_type
 
-    def post_order_condition(self, top, scope = None):
+    def convert_to_bool(self, value):
+        return semantic_tools.conver_value_to_boolean(value)
+
+    def __post_order_condition(self, top, scope = None):
         stack = [top]
         visited = []
         result = []
@@ -196,7 +203,7 @@ class SemanticModule:
                         result.append(self.__get_primitive_type(top.type))
         return result
 
-    def convolute_type_operator_vector(self, post_order_result):
+    def __convolute_type_operator_vector(self, post_order_result):
         while len(post_order_result) != 1:
             temp = []
             index = 0
@@ -212,13 +219,15 @@ class SemanticModule:
                     first = post_order_result[index]
                     if post_order_result[index + 1] == Operator.UNARY_MINUS or post_order_result[index + 1] == Operator.UNARY_PLUS:
                         operator = post_order_result[index + 1]
+                        self.check_type_operation_support(first, operator)
                         temp.append(semantic_tools.cast_types_by_operator(first, None, operator))
                         index += 2
                     else:
                         second = post_order_result[index + 1]
                         operator = post_order_result[index + 2]
-                        if first.support_operation(operator) and second.support_operation(operator):
-                            temp.append(semantic_tools.cast_types_by_operator(first, second, operator))
+                        self.check_type_operation_support(first, operator)
+                        self.check_type_operation_support(second, operator)
+                        temp.append(semantic_tools.cast_types_by_operator(first, second, operator))
                         index += 3
             post_order_result = temp
         return post_order_result[0]

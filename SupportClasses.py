@@ -12,6 +12,9 @@ class Operator(StrEnum):
     ARRAY_CALL = 'ARRAY_CALL'; SUBROUTINE_CALL = 'SUBROUTINE_CALL'; 
     OBJECT_CALL = 'OBJECT_CALL'; AND = 'AND'; OR = 'OR'; XOR = 'XOR'
 
+    def __str__(self):
+        return self.value
+
     @classmethod
     def get_value_operators(cls):
         return [cls.PLUS, cls.MINUS, cls.MULTIPLY, cls.DIVIDE, cls.UNARY_PLUS, cls.UNARY_MINUS, cls.NOT,
@@ -36,16 +39,18 @@ class PrimitiveType(StrEnum):
             case 'BYTE' | 'WORD' | 'LONGWORD' | 'UINT64' | 'SHORTINT' | 'SMALLINT' | 'INTEGER' | 'LONGWORD':
                 member.operators = (Operator.PLUS, Operator.MINUS, Operator.MULTIPLY, Operator.DIVIDE, 
                                     Operator.DIV, Operator.MOD, Operator.GREATER, Operator.SMALLER, 
-                                    Operator.EQUALITY, Operator.NONEQUALITY)
+                                    Operator.EQUALITY, Operator.NONEQUALITY, Operator.UNARY_MINUS, 
+                                    Operator.UNARY_PLUS, Operator.NOT)
             case 'SINGLE' | 'REAL' | 'DOUBLE' | 'DECIMAL':
                 member.operators = (Operator.PLUS, Operator.MINUS, Operator.MULTIPLY, Operator.DIVIDE, 
-                                    Operator.GREATER, Operator.SMALLER, Operator.EQUALITY, Operator.NONEQUALITY)
+                                    Operator.GREATER, Operator.SMALLER, Operator.EQUALITY, Operator.NONEQUALITY,
+                                    Operator.NONEQUALITY, Operator.UNARY_MINUS, Operator.UNARY_PLUS, Operator.NOT)
             case 'BOOLEAN':
                 member.operators = (Operator.NOT, Operator.AND, Operator.OR, Operator,Operator.XOR, 
-                                    Operator.GREATER, Operator.SMALLER, Operator.EQUALITY)
+                                    Operator.GREATER, Operator.SMALLER, Operator.EQUALITY, Operator.NOT)
             case 'CHAR' | 'STRING' :
                 member.operators = (Operator.PLUS, Operator.GREATER, Operator.SMALLER, Operator.EQUALITY, 
-                                    Operator.NONEQUALITY)
+                                    Operator.NONEQUALITY, Operator.NOT)
             case _: member.operators = ()
         return member
 
@@ -211,7 +216,7 @@ class NodeCallParams(Node):
     def __init__(self, params = list()):
         self.params = params
     def append(self, param):
-        self.params.append(param)
+        self.params.append(param) 
 
 # Класс унарной операции 
 class NodeUnaryOperator(Node):
@@ -226,7 +231,7 @@ class NodeUnaryOperator(Node):
 # right - правое значение
 # ВАЖНО! При создании ноды присваивания переменной, 
 # в left нужно вставить NodeVariable, а в right - что присваивается
-# Так: NodeBinaryOperator(NodeVariable('test_name'), <Выражение>, Opeartor.ASSIGN)
+# Так: NodeBinaryOperator(NodeVariable('test_name'), <Выражение>, Operator.ASSIGN)
 # Аналогично и для операций обращения к массиву (Operator.ARRAY_CALL) и для вызова подпрограмм
 class NodeBinaryOperator(Node):
     def __init__(self, left, right, operation_type = Operator.PLUS):
@@ -251,9 +256,12 @@ class NodeIfStatement(Node):
 class NodeSwitchStatement(Node):
     def __init__(self, 
                  variable = None, 
-                 case_blocks = list()):
+                 case_blocks = list(),
+                 default_block = NodeStatementPart()):
         self.variable = variable
         self.case_blocks = case_blocks
+    def append(self, case_block):
+        self.case_blocks.append(case_block)
 class NodeCaseBlock(Node):
     def __init__(self, 
                  case_list = list(), 
