@@ -116,7 +116,7 @@ class Parser:
         node = NodeConstantDeclaration()
         self.__expect('IDENTIFIER')
         node.identifier = self.__pop_value()
-        self.__expect_and_move('EQUAL')
+        self.__expect_and_move('EQUALITY')
         node.expression = self.__parse_CONDITION()
         node.type = self.__semantic_module.predict_condition_type(node.expression, self.current_scope)
         self.__semantic_module.add_variable(self.current_scope, node.identifier, node.type, True)
@@ -129,7 +129,7 @@ class Parser:
         node = NodeTypeDeclaration()
         self.__expect('IDENTIFIER')
         node.identifier = self.__pop_value()
-        self.__expect_and_move('EQUAL')
+        self.__expect_and_move('EQUALITY')
         node.type = self.__parse_type()
         self.__semantic_module.add_type(self.current_scope, node.identifier, node.type)
         if not isinstance(node.type, NodeArrayType):
@@ -208,7 +208,7 @@ class Parser:
     # Parsing condition expression
     def __parse_CONDITION(self):
         left = self.__parse_EXPRESSION()
-        while self.__check_all(('EQUAL', 'NONEQUAL', 'GREATER', 'SMALLER')):
+        while self.__check_all(Operator.get_condition_operators()):
             operator = Operator(self.__pop_token())
             right = self.__parse_EXPRESSION()
             left = NodeBinaryOperator(left, right, operator)
@@ -437,6 +437,8 @@ if __name__ == '__main__':
     code = reader.read()
     lexer = Lexer(code)
     parser = Parser(lexer)
+    semantic_module = SemanticModule()
+    parser.set_semantic_module(semantic_module)
     res = parser.parse()
     writer = open('parser.txt', 'w')
     writer.write(str(res))

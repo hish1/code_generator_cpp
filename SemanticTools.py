@@ -152,7 +152,7 @@ def get_value_type(value):
     return _type
 
 def cast_types_by_operator(type_1, type_2, oper):
-    if oper in [OP.GREATER, OP.SMALLER, OP.EQUALITY, OP.NONEQUALITY]:
+    if oper in OP.get_condition_operators():
         return PT.BOOLEAN
     if type_2 is not None:
         return base_type_upcast[type_1, type_2, oper]

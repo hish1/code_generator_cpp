@@ -149,7 +149,7 @@ class Lexer:
     n_tabs = 4
     SYMBOLS = {
         ':=': 'ASSIGN',
-        '=': 'EQUAL',
+        '=': 'EQUALITY',
         '+': 'PLUS',
         '-': 'MINUS',
         '*': 'MULTIPLY',
@@ -161,6 +161,9 @@ class Lexer:
         '{': 'LCBR',
         '}': 'RCBR',
         '\t': 'TAB',
+        '<=': 'GREATER_OR_EQUAL',
+        '>=': 'SMALLER_OR_EQUAL',
+        '<>': 'NONEQUALITY',
         ' ' * n_tabs: 'TAB',
         ',': 'COMMA',
         ':': 'COLON',
@@ -239,6 +242,16 @@ class Lexer:
                         self.state = 'COLON'
                         self.value = ':'
                         self.get_next_char()
+                
+                # <= >= and <>
+                elif self.current_char in ('>', '<'):
+                    val = self.current_char
+                    self.get_next_char()
+                    if self.current_char in ('=', '>'):
+                        val += self.current_char
+                        self.get_next_char()
+                    self.state = Lexer.SYMBOLS[val]
+                    self.value = val
 
                 #  array dot ..
                 elif self.current_char == '.':

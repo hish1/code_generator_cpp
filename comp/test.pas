@@ -5,7 +5,7 @@ TYPE
 
 VAR
   i, b : integer;
-  arr : myArray;
+  arr : myInt;
   flag : boolean;
 
 PROCEDURE test();
@@ -17,5 +17,5 @@ begin
 end;
   
 begin
-  d := -(15 + 1) + 3;
+  flag := 5 >= 15;
 end.

@@ -8,6 +8,7 @@ class Operator(StrEnum):
     PLUS = 'PLUS'; MINUS = 'MINUS'; MULTIPLY = 'MULTIPLY'; DIVIDE = 'DIVIDE';
     UNARY_PLUS = 'UNARY_PLUS'; UNARY_MINUS = 'UNARY_MINUS'; NOT = 'NOT';
     EQUALITY = 'EQUALITY'; NONEQUALITY = 'NONEQUALITY'; GREATER = 'GREATER'; SMALLER = 'SMALLER';
+    GREATER_OR_EQUAL = 'GREATER_OR_EQUAL'; SMALLER_OR_EQUAL = 'SMALLER_OR_EQUAL';
     MOD = 'MOD'; DIV = 'DIV'; IN = 'IN'; SHL = 'SHL'; SHR = 'SHR'; ASSIGN = 'ASSIGN';
     ARRAY_CALL = 'ARRAY_CALL'; SUBROUTINE_CALL = 'SUBROUTINE_CALL'; 
     OBJECT_CALL = 'OBJECT_CALL'; AND = 'AND'; OR = 'OR'; XOR = 'XOR'
@@ -18,7 +19,12 @@ class Operator(StrEnum):
     @classmethod
     def get_value_operators(cls):
         return [cls.PLUS, cls.MINUS, cls.MULTIPLY, cls.DIVIDE, cls.UNARY_PLUS, cls.UNARY_MINUS, cls.NOT,
-        cls.EQUALITY, cls.NONEQUALITY, cls.GREATER, cls.SMALLER, cls.MOD, cls.DIV]
+        cls.EQUALITY, cls.NONEQUALITY, cls.GREATER, cls.SMALLER, cls.GREATER_OR_EQUAL, cls.SMALLER_OR_EQUAL, 
+        cls.MOD, cls.DIV]
+
+    @classmethod
+    def get_condition_operators(cls):
+        return [cls.GREATER, cls.SMALLER, cls.EQUALITY, cls.NONEQUALITY, cls.GREATER_OR_EQUAL, cls.SMALLER_OR_EQUAL]
 
 # Тип функции
 class SubroutineType(StrEnum):
@@ -36,17 +42,20 @@ class PrimitiveType(StrEnum):
         member._value_ = value
         member.byte_weight = byte_weight
         match value:
-            case 'BYTE' | 'WORD' | 'LONGWORD' | 'UINT64' | 'SHORTINT' | 'SMALLINT' | 'INTEGER' | 'INT64':
+            case 'BYTE' | 'WORD' | 'LONGWORD' | 'UINT64' | 'SHORTINT' | 'SMALLINT' | 'INTEGER' | 'LONGWORD':
                 member.operators = (Operator.PLUS, Operator.MINUS, Operator.MULTIPLY, Operator.DIVIDE, 
-                                    Operator.DIV, Operator.MOD, Operator.GREATER, Operator.SMALLER, 
+                                    Operator.DIV, Operator.MOD, Operator.GREATER, Operator.SMALLER,
+                                    Operator.GREATER_OR_EQUAL, Operator.SMALLER_OR_EQUAL, 
                                     Operator.EQUALITY, Operator.NONEQUALITY, Operator.UNARY_MINUS, 
                                     Operator.UNARY_PLUS, Operator.NOT)
             case 'SINGLE' | 'REAL' | 'DOUBLE' | 'DECIMAL':
                 member.operators = (Operator.PLUS, Operator.MINUS, Operator.MULTIPLY, Operator.DIVIDE, 
-                                    Operator.GREATER, Operator.SMALLER, Operator.EQUALITY, Operator.NONEQUALITY,
+                                    Operator.GREATER, Operator.SMALLER, Operator.EQUALITY, 
+                                    Operator.GREATER_OR_EQUAL, Operator.SMALLER_OR_EQUAL,Operator.NONEQUALITY,
                                     Operator.NONEQUALITY, Operator.UNARY_MINUS, Operator.UNARY_PLUS, Operator.NOT)
             case 'BOOLEAN':
-                member.operators = (Operator.NOT, Operator.AND, Operator.OR, Operator,Operator.XOR, 
+                member.operators = (Operator.NOT, Operator.AND, Operator.OR, Operator,Operator.XOR,
+                                    Operator.GREATER_OR_EQUAL, Operator.SMALLER_OR_EQUAL, 
                                     Operator.GREATER, Operator.SMALLER, Operator.EQUALITY, Operator.NOT)
             case 'CHAR' | 'STRING' :
                 member.operators = (Operator.PLUS, Operator.GREATER, Operator.SMALLER, Operator.EQUALITY, 
