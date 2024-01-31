@@ -1,9 +1,8 @@
-from OptimizeChain import OptimizeChain
+from other.OptimizeChain import OptimizeChain, NotUsedVariableOptimize
 from lexer import Lexer
 from Parser import Parser
 from SemanticModule import SemanticModule
-from SupportClasses import NodeProgram
-from OptimizeChain import OptimizeChain, NotUsedVariableOptimize
+from other.SupportClasses import NodeProgram
 
 class CodeOptimizationProcessor:
     
@@ -22,18 +21,19 @@ class CodeOptimizationProcessor:
     def start_optimization(self, program_node : NodeProgram) -> NodeProgram:
         return self.__chain_head.process_optimization(program_node)
 
+def write_to_file(file_path, object):
+    writer = open(file_path, 'w')
+    writer.write(str(object))
+    writer.flush()
+    writer.close()
+
 if __name__ == '__main__':
-    reader = open('comp/test.pas', 'r')
-    code = reader.read()
-    lexer = Lexer(code)
+    lexer = Lexer(file_path= 'test/test pascal file.pas')
     semantic_module = SemanticModule()
     parser = Parser(lexer)
     parser.set_semantic_module(semantic_module)
     res = parser.parse()
-    writer = open('Not optimized program.txt', 'w')
-    writer.write(str(res))
-    writer.flush()
-    writer.close()
+    write_to_file('output/Not optimized program.txt', res)
     # Цепочка оптимизации
     optimizer1 = NotUsedVariableOptimize()
     optimizer1.set_semantic_module(semantic_module) # Лайфхак с таблицей
@@ -41,7 +41,4 @@ if __name__ == '__main__':
     optimize_processor = CodeOptimizationProcessor()
     optimize_processor.add_new_chain(optimizer1)
     optimized_program = optimize_processor.start_optimization(res)
-    writer = open('Optimized program.txt', 'w')
-    writer.write(str(optimized_program))
-    writer.flush()
-    writer.close()
+    write_to_file('output/Optimized program.txt', optimized_program)

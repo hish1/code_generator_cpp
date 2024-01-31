@@ -1,6 +1,15 @@
-from SupportClasses import NodeBinaryOperator, NodeValue, NodeVariable, NodeUnaryOperator
-from SupportClasses import Operator as OP
-from SupportClasses import PrimitiveType as PT
+import sys
+from pathlib import Path
+file = Path(__file__).resolve()
+parent, root = file.parent, file.parents[1]
+sys.path.append(str(root))
+try:
+    sys.path.remove(str(parent))
+except ValueError: # Already removed
+    pass
+
+from other.SupportClasses import Operator as OP
+from other.SupportClasses import PrimitiveType as PT
 from typing import Final
 import re
 import math
@@ -168,8 +177,7 @@ def conver_value_to_boolean(value):
         return bool(value)
 
 def main():
-    tt = PT.INT64
-    print(base_type_upcast[tt, OP.UNARY_MINUS])
+    pass
 
 if __name__ == '__main__':
     main()

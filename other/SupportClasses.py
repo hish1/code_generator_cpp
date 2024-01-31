@@ -1,4 +1,14 @@
-from Node import Node
+import sys
+from pathlib import Path
+file = Path(__file__).resolve()
+parent, root = file.parent, file.parents[1]
+sys.path.append(str(root))
+try:
+    sys.path.remove(str(parent))
+except ValueError: # Already removed
+    pass
+
+from other.Node import Node
 from enum import StrEnum
 
 class ProgramType(StrEnum):
@@ -195,10 +205,8 @@ class NodeArrayRange(Node):
         self.right_bound = right_bound
 class NodeArrayType(Node):
     def __init__(self,
-                 identifier = '',
                  array_ranges = list(), 
                  _type = None):
-        self.identifier = identifier
         self.array_ranges = array_ranges
         self.type = _type
     def append(self, range : NodeArrayRange):

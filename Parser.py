@@ -1,12 +1,16 @@
 from lexer import Lexer
-from SupportClasses import *
+from other.SupportClasses import *
 from SemanticModule import SemanticModule
 
 class Parser:
 
-    def __init__(self, lexer):
-        self.lexer = lexer
-        self.current_token = lexer.get_next_token()
+    def __init__(self, lexer : Lexer = None):
+        if lexer:
+            self.lexer = lexer
+            self.current_token = lexer.get_next_token()
+        else:
+            self.lexer = None
+            self.current_token = 'EOF'
         self.current_scope = list()
         self.__semantic_module = None
 
@@ -47,6 +51,10 @@ class Parser:
 
     def set_semantic_module(self, semantic_module):
         self.__semantic_module = semantic_module
+
+    def set_lexer(self, lexer):
+        self.lexer = lexer
+        self.current_token = lexer.get_next_token()
     
     def parse(self):
         if not self.__check('EOF'):
@@ -261,11 +269,11 @@ class Parser:
         factor = self.__parse_FACTOR()
         match operator:
             case Operator.PLUS:
-                self.__semantic_module.check_type_operation_support(factor.type, Operator.UNARY_PLUS)
+                self.__semantic_module.check_type_operation_support(factor, Operator.UNARY_PLUS, self.current_scope)
                 node = factor
             case Operator.MINUS:
                 if isinstance(factor, NodeValue):
-                    self.__semantic_module.check_type_operation_support(factor.type, Operator.UNARY_MINUS)
+                    self.__semantic_module.check_type_operation_support(factor, Operator.UNARY_MINUS)
                     factor.value = '-' + factor.value
                     factor.type = self.__semantic_module.return_value_type(factor.value)
                     node = factor
@@ -289,7 +297,9 @@ class Parser:
             match self.current_token[0]:
                 case 'ASSIGN':
                     self.__next_token()
+                    self.__semantic_module.use_count_score += 1
                     right = self.__parse_CONDITION()
+                    self.__semantic_module.use_count_score -= 1
                     variable = left
                     while not isinstance(variable, NodeVariable):
                         variable = variable.left
@@ -312,19 +322,23 @@ class Parser:
     # Parsing subroution call params
     def __parse_SUBROUTINE_CALL_PARAMS(self):
         node = NodeCallParams(list())
+        self.__semantic_module.use_count_score += 1
         while not self.__check('RPAREN'):
             node.append(self.__parse_CONDITION())
             if self.__check('COMMA'):
                 self.__next_token()
+        self.__semantic_module.use_count_score -= 1
         self.__next_token()
         return node
 
     def __parse_ARRAY_CALL(self):
         node = NodeCallParams(list())
+        self.__semantic_module.use_count_score += 1
         while not self.__check('RBR'):
             node.append(self.__parse_EXPRESSION())
             if self.__check('COMMA'):
                 self.__next_token()
+        self.__semantic_module.use_count_score -= 1
         self.__next_token()
         return node
 
@@ -369,9 +383,11 @@ class Parser:
         return node
 
     def __parse_IF_STATEMENT(self):
+        self.__semantic_module.use_count_score += 1
         node = NodeIfStatement()
         node.condition = self.__parse_CONDITION()
         self.__expect_and_move('THEN')
+        self.__semantic_module.use_count_score -= 1
         node.then_statement_part = self.__parse_STATEMENT_BLOCK()
         if self.__check('ELSE'):
             self.__next_token()
@@ -401,6 +417,7 @@ class Parser:
         return node
 
     def __parse_FOR_STATEMENT(self):
+        self.__semantic_module.use_count_score += 1
         node = NodeForStatement()
         self.__expect('IDENTIFIER')
         node.variable = NodeVariable(self.__pop_value())
@@ -410,6 +427,7 @@ class Parser:
             expression = self.__parse_EXPRESSION()
             self.__semantic_module.check_assign(self.current_scope, node.variable.identifier, expression)
             node.initial_expression = expression
+        self.__semantic_module.use_count_score -= 1
         self.__expect_and_move('TO')
         node.end_expression = self.__parse_EXPRESSION()
         self.__expect_and_move('DO')
@@ -417,8 +435,10 @@ class Parser:
         return node
 
     def __parse_WHILE_STATEMENT(self):
+        self.__semantic_module.use_count_score += 1
         node = NodeWhileStatement()
         node.condition = self.__parse_CONDITION()
+        self.__semantic_module.use_count_score -= 1
         self.__expect_and_move('DO')
         node.statement_part = self.__parse_STATEMENT_BLOCK()
         return node       
@@ -429,18 +449,18 @@ class Parser:
             node.statement_part.append(self.__parse_STATEMENT())
             self.__expect_and_move('SEMICOLON')
         self.__next_token()
+        self.__semantic_module.use_count_score += 1
         node.condition = self.__parse_CONDITION()
+        self.__semantic_module.use_count_score -= 1
         return node
             
 if __name__ == '__main__':
-    reader = open('comp/test.pas', 'r')
-    code = reader.read()
-    lexer = Lexer(code)
+    lexer = Lexer(file_path= 'test/test pascal file.pas')
     parser = Parser(lexer)
     semantic_module = SemanticModule()
     parser.set_semantic_module(semantic_module)
     res = parser.parse()
-    writer = open('parser.txt', 'w')
+    writer = open('output/parser.txt', 'w')
     writer.write(str(res))
     writer.flush()
     writer.close()

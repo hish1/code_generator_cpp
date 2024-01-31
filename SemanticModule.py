@@ -1,13 +1,10 @@
-from SupportClasses import PrimitiveType
-from Node import Node
-from SupportClasses import NodeType
-from SupportClasses import NodeVariable, NodeSubroutine, NodeCallParams, NodeArrayType, NodeValue
-# Классы для объявления
-from SupportClasses import NodeVariableDeclaration, NodeTypeDeclaration, NodeConstantDeclaration 
-from SupportClasses import NodeBinaryOperator, NodeUnaryOperator
-from SupportClasses import Operator
+from other.SupportClasses import PrimitiveType, Operator
+from other.SupportClasses import NodeType
+from other.SupportClasses import NodeVariable, NodeSubroutine, NodeCallParams, NodeArrayType, NodeValue
+from other.SupportClasses import NodeBinaryOperator, NodeUnaryOperator
+import other.SemanticTools as semantic_tools
+
 from enum import Enum
-import SemanticTools as semantic_tools
 
 class UseStateEnum(Enum):
     DECLARED = 0; LINKED = 1; USED = 2
@@ -21,7 +18,7 @@ class Variable:
         self.identifier = identifier
         self.type = _type
         self.IS_IMMUTABLE = is_immutable
-        self.state = UseStateEnum.DECLARED
+        self.use_count = 0
 
     def __str__(self):
         return self.identifier
@@ -33,15 +30,16 @@ class SubroutineVariable(Variable):
     def __init__(self, 
                  identifier = '',
                  _type = PrimitiveType.UNDEFINED,
-                 formal_params = None,
-                 state : UseStateEnum = UseStateEnum.DECLARED):
+                 formal_params = None):
         super().__init__(identifier, _type)
         self.formal_params = formal_params
+        self.use_count = 2**32 - 1
 
 class SemanticModule:
 
     def __init__(self):
         self.__scope_table = dict()
+        self.use_count_score = 0
 
     def __raise_exception(self, message):
         raise AttributeError(f'Semantic Module error: {message}')
@@ -57,7 +55,7 @@ class SemanticModule:
             self.__raise_exception(f'Try to redefine identifier {name} is same scope .{".".join(scope)}')
         type_iter = variable.type
         while isinstance(type_iter, TypeVariable):
-            type_iter.state = UseStateEnum.LINKED
+            type_iter.use_count += 1
             type_iter = type_iter.type
         self.__scope_table[full_name] = variable
 
@@ -69,11 +67,8 @@ class SemanticModule:
             if full_name in self.__scope_table:
                 object = self.__scope_table[full_name]
                 if (prefered_object is None) or (isinstance(object, prefered_object)):
-                    object.state = UseStateEnum.USED
-                    type_iter = object.type
-                    while isinstance(type_iter, TypeVariable):
-                        type_iter.state = UseStateEnum.USED
-                        type_iter = type_iter.type
+                    if self.use_count_score and not isinstance(object, TypeVariable): 
+                        object.use_count += 1
                     return object
             if len(local_scope) > 0:
                 local_scope.pop()
@@ -101,12 +96,19 @@ class SemanticModule:
         variable = SubroutineVariable(identifier, _type, formal_params)
         self.__add_to_scope(scope, identifier, variable)
 
-    def get_unused_variable_names(self):
-        not_used = filter(lambda pair: pair[1].state != UseStateEnum.USED, self.__scope_table.items())
-        return list(pair[0] for pair in not_used)
+    def get_scope_table(self):
+        # not_used = filter(lambda pair: pair[1].state != UseStateEnum.USED, self.__scope_table.items())
+        # return list(pair[0] for pair in not_used)
+        return self.__scope_table
 
-    def check_type_operation_support(self, type, oper : Operator):
-        if not oper in type.operators:
+    def check_type_operation_support(self, condition, oper : Operator, scope = None):
+        if PrimitiveType.__contains__(condition):
+            predict_type = condition
+        elif 'type' in condition.__dict__:
+            predict_type = condition.type
+        else:
+            predict_type = self.predict_condition_type(condition, scope)
+        if not oper in predict_type.operators:
             self.__raise_exception(f'Unsupported operator {str(oper)} for type {str(type)}')
 
     def check_subroutine_call(self, scope, subroutine_name, input_params):
