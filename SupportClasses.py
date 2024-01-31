@@ -42,7 +42,7 @@ class PrimitiveType(StrEnum):
         member._value_ = value
         member.byte_weight = byte_weight
         match value:
-            case 'BYTE' | 'WORD' | 'LONGWORD' | 'UINT64' | 'SHORTINT' | 'SMALLINT' | 'INTEGER' | 'LONGWORD':
+            case 'BYTE' | 'WORD' | 'LONGWORD' | 'UINT64' | 'SHORTINT' | 'SMALLINT' | 'INTEGER' | 'INT64':
                 member.operators = (Operator.PLUS, Operator.MINUS, Operator.MULTIPLY, Operator.DIVIDE, 
                                     Operator.DIV, Operator.MOD, Operator.GREATER, Operator.SMALLER,
                                     Operator.GREATER_OR_EQUAL, Operator.SMALLER_OR_EQUAL, 
