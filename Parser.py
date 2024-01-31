@@ -1,5 +1,4 @@
 from lexer import Lexer
-from lexer import regex_patterns as Token
 from SupportClasses import *
 from SemanticModule import SemanticModule
 
@@ -7,12 +6,12 @@ class Parser:
 
     def __init__(self, lexer):
         self.lexer = lexer
-        self.current_token = lexer.next_token()
+        self.current_token = lexer.get_next_token()
         self.current_scope = list()
         self.__semantic_module = SemanticModule()
 
     def __next_token(self):
-        self.current_token = self.lexer.next_token()
+        self.current_token = self.lexer.get_next_token()
     
     def __expect(self, _expected):
         if self.current_token[0] != _expected:
@@ -114,7 +113,7 @@ class Parser:
         node = NodeConstantDeclaration()
         self.__expect('IDENTIFIER')
         node.identifier = self.__pop_value()
-        self.__expect_and_move('EQUALITY')
+        self.__expect_and_move('EQUAL')
         node.expression = self.__parse_CONDITION()
         node.type = self.__semantic_module.predict_condition_type(node.expression, self.current_scope)
         self.__semantic_module.add_variable(self.current_scope, node.identifier, node.type, True)
@@ -127,7 +126,7 @@ class Parser:
         node = NodeTypeDeclaration()
         self.__expect('IDENTIFIER')
         node.identifier = self.__pop_value()
-        self.__expect_and_move('EQUALITY')
+        self.__expect_and_move('EQUAL')
         node.type = self.__parse_type()
         self.__semantic_module.add_type(self.current_scope, node.identifier, node.type)
         if not isinstance(node.type, NodeArrayType):
@@ -189,12 +188,11 @@ class Parser:
     
     def __parse_ARRAY_TYPE(self):
         node = NodeArrayType(array_ranges = list())
-        self.__expect_and_move('LSBR')
-        while not self.__check('RSBR'):
+        self.__expect_and_move('LBR')
+        while not self.__check('RBR'):
             array_range = NodeArrayRange()
             array_range.left_bound = self.__parse_FACTOR()
-            self.__expect_and_move('DOT')
-            self.__expect_and_move('DOT')
+            self.__expect_and_move('ARRDOT')
             array_range.right_bound = self.__parse_FACTOR()
             if self.__check('COMMA'):
                 self.__next_token()
@@ -207,7 +205,7 @@ class Parser:
     # Parsing condition expression
     def __parse_CONDITION(self):
         left = self.__parse_EXPRESSION()
-        while self.__check_all(('EQUALITY', 'NONEQUALITY', 'GREATER', 'SMALLER')):
+        while self.__check_all(('EQUAL', 'NONEQUAL', 'GREATER', 'SMALLER')):
             operator = Operator(self.__pop_token())
             right = self.__parse_EXPRESSION()
             left = NodeBinaryOperator(left, right, operator)
@@ -238,10 +236,12 @@ class Parser:
                 possible_number = self.__pop_value()
                 _type = self.__semantic_module.return_value_type(possible_number)
                 return NodeValue(possible_number, _type)
+            case 'STRING_VAL':
+                return NodeValue(self.__pop_value(), PrimitiveType.STRING)
+            case 'CHAR_VAL':
+                return NodeValue(self.__pop_value(), PrimitiveType.CHAR)
             case 'TRUE' | 'FALSE':
                 return NodeValue(self.__pop_value(), PrimitiveType.BOOLEAN)
-            case 'QUOTES':
-                return self.__parse_STRING()
             case 'LPAREN':
                 self.__next_token()
                 condition = self.__parse_CONDITION()
@@ -282,7 +282,7 @@ class Parser:
         left = NodeVariable(self.__pop_value())
         # Проверка на существование переменной
         self.__semantic_module.get_variable(self.current_scope, left.identifier)
-        while self.__check_all(('ASSIGN', 'LPAREN', 'LSBR', 'DOT')):
+        while self.__check_all(('ASSIGN', 'LPAREN', 'LBR', 'DOT')):
             match self.current_token[0]:
                 case 'ASSIGN':
                     self.__next_token()
@@ -297,7 +297,7 @@ class Parser:
                     right = self.__parse_SUBROUTINE_CALL_PARAMS()
                     self.__semantic_module.check_subroutine_call(self.current_scope, left.identifier, right)
                     left = NodeBinaryOperator(left, right, Operator.SUBROUTINE_CALL)
-                case 'LSBR':
+                case 'LBR':
                     self.__next_token()
                     right = self.__parse_ARRAY_CALL()
                     self.__semantic_module.check_array_access(self.current_scope, left.identifier, right)
@@ -318,7 +318,7 @@ class Parser:
 
     def __parse_ARRAY_CALL(self):
         node = NodeCallParams(list())
-        while not self.__check('RSBR'):
+        while not self.__check('RBR'):
             node.append(self.__parse_EXPRESSION())
             if self.__check('COMMA'):
                 self.__next_token()
@@ -417,7 +417,7 @@ class Parser:
         node = NodeWhileStatement()
         node.condition = self.__parse_CONDITION()
         self.__expect_and_move('DO')
-        node.statement_block = self.__parse_STATEMENT_BLOCK()
+        node.statement_part = self.__parse_STATEMENT_BLOCK()
         return node       
 
     def __parse_REPEAT_STATEMENT(self):

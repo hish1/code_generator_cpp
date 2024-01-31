@@ -1,50 +1,98 @@
 NodeProgram
 |+-identifier: V1
 |+-global_declaration: NodeDeclarationPart
-|   |+-NodeConstantDeclaration
-|   |   |+-identifier: d
-|   |   |+-type: REAL
-|   |   |+-expression: NodeBinaryOperator
-|   |   |   |+-left: NodeBinaryOperator
-|   |   |   |   |+-left: NodeValue
-|   |   |   |   |   |+-value: 254
-|   |   |   |   |   |+-type: BYTE
-|   |   |   |   |+-right: NodeValue
-|   |   |   |   |   |+-value: 128
-|   |   |   |   |   |+-type: BYTE
-|   |   |   |   |+-operation_type: PLUS
-|   |   |   |+-right: NodeValue
-|   |   |   |   |+-value: 2
-|   |   |   |   |+-type: BYTE
-|   |   |   |+-operation_type: DIVIDE
 |   |+-NodeTypeDeclaration
-|   |   |+-identifier: myInt
-|   |   |+-type: INTEGER
+|   |   |+-identifier: myArray
+|   |   |+-type: NodeArrayType
+|   |   |   |+-identifier: 
+|   |   |   |+-array_ranges: [NodeArrayRange
+|+-left_bound: NodeValue
+|   |+-value: 1
+|   |+-type: BYTE
+|+-right_bound: NodeValue
+|   |+-value: 10
+|   |+-type: BYTE
+, NodeArrayRange
+|+-left_bound: NodeValue
+|   |+-value: 1
+|   |+-type: BYTE
+|+-right_bound: NodeValue
+|   |+-value: 10
+|   |+-type: BYTE
+]
+|   |   |   |+-type: INTEGER
 |   |+-NodeVariableDeclaration
 |   |   |+-identifier: i
-|   |   |+-type: myInt
+|   |   |+-type: INTEGER
 |   |+-NodeVariableDeclaration
 |   |   |+-identifier: b
-|   |   |+-type: myInt
+|   |   |+-type: INTEGER
+|   |+-NodeVariableDeclaration
+|   |   |+-identifier: arr
+|   |   |+-type: myArray
 |   |+-NodeVariableDeclaration
 |   |   |+-identifier: flag
 |   |   |+-type: BOOLEAN
 |   |+-NodeSubroutine
 |   |   |+-identifier: test
-|   |   |+-subroutine_type: PROCEDURE
-|   |   |+-type: UNDEFINED
+|   |   |+-subroutine_type: FUNCTION
+|   |   |+-type: myArray
 |   |   |+-formal_params: NodeSubroutineFormalParams
+|   |   |   |+-NodeVariableDeclaration
+|   |   |   |   |+-identifier: arr
+|   |   |   |   |+-type: myArray
 |   |   |+-declaration_part: NodeDeclarationPart
 |   |   |   |+-NodeVariableDeclaration
-|   |   |   |   |+-identifier: tt
-|   |   |   |   |+-type: myInt
+|   |   |   |   |+-identifier: i
+|   |   |   |   |+-type: INTEGER
+|   |   |   |+-NodeVariableDeclaration
+|   |   |   |   |+-identifier: j
+|   |   |   |   |+-type: INTEGER
 |   |   |+-statement_part: NodeStatementPart
+|   |   |   |+-NodeForStatement
+|   |   |   |   |+-variable: NodeVariable
+|   |   |   |   |   |+-identifier: i
+|   |   |   |   |+-initial_expression: NodeValue
+|   |   |   |   |   |+-value: 1
+|   |   |   |   |   |+-type: BYTE
+|   |   |   |   |+-end_expression: NodeValue
+|   |   |   |   |   |+-value: 10
+|   |   |   |   |   |+-type: BYTE
+|   |   |   |   |+-statement_part: NodeStatementPart
+|   |   |   |   |   |+-NodeForStatement
+|   |   |   |   |   |   |+-variable: NodeVariable
+|   |   |   |   |   |   |   |+-identifier: j
+|   |   |   |   |   |   |+-initial_expression: NodeValue
+|   |   |   |   |   |   |   |+-value: 1
+|   |   |   |   |   |   |   |+-type: BYTE
+|   |   |   |   |   |   |+-end_expression: NodeValue
+|   |   |   |   |   |   |   |+-value: 10
+|   |   |   |   |   |   |   |+-type: BYTE
+|   |   |   |   |   |   |+-statement_part: NodeStatementPart
+|   |   |   |   |   |   |   |+-NodeBinaryOperator
+|   |   |   |   |   |   |   |   |+-left: NodeBinaryOperator
+|   |   |   |   |   |   |   |   |   |+-left: NodeVariable
+|   |   |   |   |   |   |   |   |   |   |+-identifier: arr
+|   |   |   |   |   |   |   |   |   |+-right: NodeCallParams
+|   |   |   |   |   |   |   |   |   |   |+-NodeVariable
+|   |   |   |   |   |   |   |   |   |   |   |+-identifier: i
+|   |   |   |   |   |   |   |   |   |   |+-NodeVariable
+|   |   |   |   |   |   |   |   |   |   |   |+-identifier: j
+|   |   |   |   |   |   |   |   |   |+-operation_type: ARRAY_CALL
+|   |   |   |   |   |   |   |   |+-right: NodeBinaryOperator
+|   |   |   |   |   |   |   |   |   |+-left: NodeVariable
+|   |   |   |   |   |   |   |   |   |   |+-identifier: i
+|   |   |   |   |   |   |   |   |   |+-right: NodeVariable
+|   |   |   |   |   |   |   |   |   |   |+-identifier: j
+|   |   |   |   |   |   |   |   |   |+-operation_type: MULTIPLY
+|   |   |   |   |   |   |   |   |+-operation_type: ASSIGN
+|   |   |   |   |   |   |+-is_increase: False
+|   |   |   |   |+-is_increase: False
 |   |   |   |+-NodeBinaryOperator
 |   |   |   |   |+-left: NodeVariable
-|   |   |   |   |   |+-identifier: tt
-|   |   |   |   |+-right: NodeValue
-|   |   |   |   |   |+-value: 25
-|   |   |   |   |   |+-type: BYTE
+|   |   |   |   |   |+-identifier: test
+|   |   |   |   |+-right: NodeVariable
+|   |   |   |   |   |+-identifier: arr
 |   |   |   |   |+-operation_type: ASSIGN
 |   |   |+-is_forward_declaration: False
 |+-statement_part: NodeStatementPart
@@ -54,9 +102,8 @@ NodeProgram
 |   |   |+-right: NodeBinaryOperator
 |   |   |   |+-left: NodeUnaryOperator
 |   |   |   |   |+-left: NodeBinaryOperator
-|   |   |   |   |   |+-left: NodeValue
-|   |   |   |   |   |   |+-value: 15
-|   |   |   |   |   |   |+-type: BYTE
+|   |   |   |   |   |+-left: NodeVariable
+|   |   |   |   |   |   |+-identifier: i
 |   |   |   |   |   |+-right: NodeValue
 |   |   |   |   |   |   |+-value: 1
 |   |   |   |   |   |   |+-type: BYTE

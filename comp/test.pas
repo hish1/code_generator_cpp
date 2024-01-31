@@ -1,23 +1,25 @@
 PROGRAM V1;
 
-CONST
-  d = (254 + 128) / 2;
-  
 TYPE
-  myInt = integer;
+  myArray = array[1..10, 1..10] of integer;
 
 VAR
-  i, b : myInt;
+  i, b : integer;
+  arr : myArray;
   flag : boolean;
 
-PROCEDURE test();
-VAR
-  tt : myInt;
+FUNCTION test(arr: myArray) : myArray;
+Var
+  i, j : integer;
+  ret_array : array[1..10, 1..10] of integer;
 
 begin
-  tt := 25;
+  for i := 1 to 10 do
+    for j := 1 to 10 do
+      ret_array[i,j] := i * j;
+  test := ret_array;
 end;
   
 begin
-  d := -(15 + 1) + 3;
+  i := -(i + 1) + 3;
 end.

@@ -172,6 +172,8 @@ class SemanticModule:
         if variable.IS_IMMUTABLE:
             self.__raise_exception(f'Try to change value of constant {variable.identifier}')
         variable_type = variable.type
+        if isinstance(condition, NodeVariable):
+            condition = self.get_variable(scope, condition.identifier)
         condition_type = self.predict_condition_type(condition, scope)
         if not self.check_type_compatibility(variable_type, condition_type):
             self.__raise_exception(f'Identifier type {variable_type} is not compatibility with type {condition_type}')

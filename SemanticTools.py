@@ -166,8 +166,8 @@ def conver_value_to_boolean(value):
         return bool(value)
 
 def main():
-    test = str(254 / 128)
-    print(get_value_type(test))
+    tt = PT.INT64
+    print(base_type_upcast[tt, OP.UNARY_MINUS])
 
 if __name__ == '__main__':
     main()
