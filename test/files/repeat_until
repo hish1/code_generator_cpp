@@ -1,0 +1,9 @@
+PROGRAM V1;
+VAR
+    a: integer;
+begin
+    a := 254;
+    repeat
+      a := a - 1;
+    until a = 0;
+end.

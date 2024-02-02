@@ -1,0 +1,9 @@
+PROGRAM V1;
+VAR
+    a, b, i, c: integer;
+begin
+    a := 254;
+    b := 128;
+    for i := b to a do
+      c := c + 1;
+end.

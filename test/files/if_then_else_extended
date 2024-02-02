@@ -1,0 +1,18 @@
+PROGRAM V1;
+VAR
+    a, b: integer;
+    e: real;
+begin
+    a := 254;
+    b := 128;
+    if a > b then
+        begin
+            b := a;
+            e := b/a;
+        end
+    else
+        begin
+            a := b * 2;
+            e := a/b;
+        end;
+end.

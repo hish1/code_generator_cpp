@@ -1,0 +1,10 @@
+PROGRAM V1;
+VAR
+    a, b: integer;
+begin
+  a := 2;
+  case a of
+    1: b := 1;
+    2: b := 2;
+  end;
+end.

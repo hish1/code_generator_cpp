@@ -1,0 +1,5 @@
+PROGRAM V1;
+CONST
+  N = 10;
+begin
+end.

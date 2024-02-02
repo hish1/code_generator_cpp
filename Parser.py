@@ -19,7 +19,7 @@ class Parser:
     
     def __expect(self, _expected):
         if self.current_token[0] != _expected:
-            self.__raise_exception(f'Unexpected token: {self.current_token}')
+            self.__raise_exception(f'Unexpected token: expect {_expected}: got {self.current_token[0]}')
         return True
 
     def __expect_and_move(self, _expected):
@@ -104,6 +104,7 @@ class Parser:
     def __parse_VAR_statement(self):
         identifiers = []
         while not self.__check('COLON'):
+            self.__expect('IDENTIFIER')
             identifiers.append(self.__pop_value())
             if self.__check('COMMA'):
                 self.__next_token()
@@ -142,6 +143,8 @@ class Parser:
         self.__semantic_module.add_type(self.current_scope, node.identifier, node.type)
         if not isinstance(node.type, NodeArrayType):
             node.type = str(node.type)
+        else:
+            node.type.type = str(node.type.type)
         return node
 
     def __parse_SUBROUTINE(self):
@@ -307,12 +310,16 @@ class Parser:
                     left = NodeBinaryOperator(left, right, Operator.ASSIGN)
                 case 'LPAREN':
                     self.__next_token()
+                    self.__semantic_module.use_count_score += 1
                     right = self.__parse_SUBROUTINE_CALL_PARAMS()
+                    self.__semantic_module.use_count_score -= 1
                     self.__semantic_module.check_subroutine_call(self.current_scope, left.identifier, right)
                     left = NodeBinaryOperator(left, right, Operator.SUBROUTINE_CALL)
                 case 'LBR':
                     self.__next_token()
+                    self.__semantic_module.use_count_score += 1
                     right = self.__parse_ARRAY_CALL()
+                    self.__semantic_module.use_count_score -= 1
                     self.__semantic_module.check_array_access(self.current_scope, left.identifier, right)
                     left = NodeBinaryOperator(left, right, Operator.ARRAY_CALL)
                 case 'DOT':
@@ -427,9 +434,9 @@ class Parser:
             expression = self.__parse_EXPRESSION()
             self.__semantic_module.check_assign(self.current_scope, node.variable.identifier, expression)
             node.initial_expression = expression
-        self.__semantic_module.use_count_score -= 1
         self.__expect_and_move('TO')
         node.end_expression = self.__parse_EXPRESSION()
+        self.__semantic_module.use_count_score -= 1
         self.__expect_and_move('DO')
         node.statement_part = self.__parse_STATEMENT_BLOCK()
         return node

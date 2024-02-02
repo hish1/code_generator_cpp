@@ -3,6 +3,7 @@ from Parser import Parser
 from SemanticModule import SemanticModule
 from CodeOptimizationProcessor import CodeOptimizationProcessor as Optimizator
 from other.OptimizeChain import NotUsedVariableOptimize as NotUsedChain
+from gen import Gen
 
 lexer = Lexer()
 parser = Parser()
@@ -19,9 +20,11 @@ def main():
     writer.write(str(before))
     writer.flush()
     writer.close()
-    after = optimizator.start_optimization(before)
-    writer = open('output/after.txt', 'w')
-    writer.write(str(after))
+    # after = optimizator.start_optimization(before)
+    generator = Gen(before)
+    code = generator.generate(before)
+    writer = open('output/code.cpp', 'w')
+    writer.write(str(code))
     writer.flush()
     writer.close()
 

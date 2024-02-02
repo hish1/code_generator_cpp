@@ -1,0 +1,11 @@
+PROGRAM V1;
+VAR
+    a, b: integer;
+begin
+    a := 254;
+    b := 128;
+    while a > b do begin
+      a := a - 1;
+      b := b + 1;
+    end;
+end.

@@ -79,7 +79,10 @@ class SemanticModule:
         return self.__get_object(scope, type_name, TypeVariable)
 
     def get_variable(self, scope, variable_name):
-        return self.__get_object(scope, variable_name, Variable)
+        obj = self.__get_object(scope, variable_name, Variable)
+        if isinstance(obj, SubroutineVariable) or isinstance(obj.type, TypeVariable):
+            obj.use_count += 15
+        return obj
 
     def return_value_type(self, value):
         return semantic_tools.get_value_type(value)

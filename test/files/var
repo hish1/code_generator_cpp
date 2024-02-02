@@ -1,0 +1,7 @@
+PROGRAM V1;
+VAR
+    a, b: integer;
+    c: real;
+    d: string;
+begin
+end.

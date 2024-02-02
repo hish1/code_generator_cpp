@@ -33,7 +33,7 @@ if __name__ == '__main__':
     parser = Parser(lexer)
     parser.set_semantic_module(semantic_module)
     res = parser.parse()
-    write_to_file('output/Not optimized program.txt', res)
+    write_to_file('output/Not optimized program1.txt', res)
     # Цепочка оптимизации
     optimizer1 = NotUsedVariableOptimize()
     optimizer1.set_semantic_module(semantic_module) # Лайфхак с таблицей
@@ -41,4 +41,4 @@ if __name__ == '__main__':
     optimize_processor = CodeOptimizationProcessor()
     optimize_processor.add_new_chain(optimizer1)
     optimized_program = optimize_processor.start_optimization(res)
-    write_to_file('output/Optimized program.txt', optimized_program)
+    write_to_file('output/Optimized program1.txt', optimized_program)

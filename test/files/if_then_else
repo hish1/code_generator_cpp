@@ -1,0 +1,11 @@
+PROGRAM V1;
+VAR
+    a, b: integer;
+begin
+    a := 254;
+    b := 128;
+    if a > b then
+        b := a
+    else
+        b := a * 2;
+end.

@@ -1,0 +1,11 @@
+PROGRAM V1;
+VAR
+  a, b: integer;
+  FUNCTION test(f: integer): integer;
+    begin
+      test := f + 10;
+    end;
+begin
+  a := 10;
+  b := test(a);
+end.

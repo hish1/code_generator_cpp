@@ -127,9 +127,16 @@ class MainNode(Node):
         self.program_type = program_type
         self.node_body = node_body
 
+class NodeDeclarationPart(Node):
+    def __init__(self, declaration_list = list()):
+        self.declaration_list = declaration_list
+
 # Класс для описания программы (НЕ модуля)
 class NodeProgram(Node):
-    def __init__(self, identifier= '', global_declaration= None, statement_part = NodeStatementPart()):
+    def __init__(self, 
+                 identifier= '', 
+                 global_declaration= NodeDeclarationPart(list()), 
+                 statement_part = NodeStatementPart()):
         self.identifier = identifier
         self.global_declaration = global_declaration
         self.statement_part = statement_part
@@ -139,10 +146,6 @@ class NodeValue(Node):
     def __init__(self, value, _type):
         self.value = value
         self.type = _type
-
-class NodeDeclarationPart(Node):
-    def __init__(self, declaration_list = list()):
-        self.declaration_list = declaration_list
 
 # Классы для объявление переменных, констант и типов
 # identifier - название объявляемого - всегда строка

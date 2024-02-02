@@ -177,7 +177,10 @@ def conver_value_to_boolean(value):
         return bool(value)
 
 def main():
-    pass
+    print(f'Сумма типов {str(PT.BYTE)} и {str(PT.WORD)} равна типу {base_type_upcast[PT.BYTE, PT.WORD, OP.PLUS]}')
+    print(f'Сумма типов {str(PT.SHORTINT)} и {str(PT.SHORTINT)} равна типу {base_type_upcast[PT.SHORTINT, PT.SHORTINT, OP.PLUS]}')
+    print(f'Остаток от деления типов {str(PT.SHORTINT)} и {str(PT.SHORTINT)} равна типу {base_type_upcast[PT.SHORTINT, PT.SHORTINT, OP.MOD]}')
+    print(f'Целочисленное деление типов {str(PT.BYTE)} и {str(PT.BYTE)} равна типу {base_type_upcast[PT.BYTE, PT.BYTE, OP.DIV]}')
 
 if __name__ == '__main__':
     main()

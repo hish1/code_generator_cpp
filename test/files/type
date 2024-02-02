@@ -1,0 +1,5 @@
+PROGRAM V1;
+TYPE
+  customArray = array [1..10] of integer;
+begin
+end.
